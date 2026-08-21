@@ -1,0 +1,76 @@
+#!/bin/bash
+# info: remove file manager functionality from Tulio Control Panel
+# options: [MODE]
+#
+# example: v-delete-sys-filemanager
+#
+# This function removes the File Manager and its entry points
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+MODE=$1
+FORCE=$2
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+FM_INSTALL_DIR="$TULIO/web/fm"
+
+#----------------------------------------------------------#
+#                    Verifications                         #
+#----------------------------------------------------------#
+
+# Checking root permissions
+if [ "x$(id -u)" != 'x0' ]; then
+	echo "Error: Script can be run executed only by root"
+	exit 10
+fi
+
+# Ensure that $TULIO (/usr/local/tulio/) and other variables are valid.
+if [ -z "$TULIO" ]; then
+	TULIO="/usr/local/tulio"
+fi
+
+if [ -z "$HOMEDIR" ] || [ -z "$TULIO_INSTALL_DIR" ]; then
+	echo "Error: Tulio environment vars not present"
+	exit 2
+fi
+
+# Perform verification if read-only mode is enabled
+check_tulio_demo_mode
+
+# Check if File Manager components are installed
+if [ "$FORCE" != "yes" ] && [ ! -e "$FM_INSTALL_DIR" ]; then
+	echo "ERROR: File Manager components are not installed."
+	exit 1
+fi
+
+if [ "$FORCE" != "yes" ] && [ "$FILE_MANAGER" = "false" ]; then
+	echo "ERROR: File Manager is not enabled."
+	exit 1
+fi
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+rm --recursive --force "$FM_INSTALL_DIR"
+$BIN/v-change-sys-config-value 'FILE_MANAGER' 'false'
+
+if [ "$MODE" != "quiet" ]; then
+	echo "File Manager has been removed from the system."
+fi
+
+#----------------------------------------------------------#
+#                       Logging                            #
+#----------------------------------------------------------#
+
+$BIN/v-log-action "system" "Info" "Plugins" "File Manager disabled."
+log_event "$OK" "$ARGUMENTS"

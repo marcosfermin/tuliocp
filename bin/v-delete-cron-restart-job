@@ -1,0 +1,46 @@
+#!/bin/bash
+# info: delete restart job
+# options: NONE
+#
+# This function for disabling restart cron tasks
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+#----------------------------------------------------------#
+#                    Verifications                         #
+#----------------------------------------------------------#
+
+is_system_enabled "$CRON_SYSTEM" 'CRON_SYSTEM'
+
+# Perform verification if read-only mode is enabled
+check_tulio_demo_mode
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+# Add cron job
+cmd="v-update-sys-queue restart"
+check_cron=$(grep "$cmd" "/var/spool/cron/crontabs/tulioweb" 2> /dev/null)
+if [ -n "$check_cron" ]; then
+	sed -i "/v-update-sys-queue restart/d" "/var/spool/cron/crontabs/tulioweb"
+fi
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+# Logging
+log_event "$OK" "$ARGUMENTS"
+
+exit

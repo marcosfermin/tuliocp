@@ -1,0 +1,78 @@
+#!/bin/bash
+# info: delete remote dns domains
+# options: [HOST]
+#
+# This function deletes remote dns domains.
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Argument definition
+host=$1
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# shellcheck source=/usr/local/tulio/func/remote.sh
+source $TULIO/func/remote.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+#----------------------------------------------------------#
+#                    Verifications                         #
+#----------------------------------------------------------#
+
+is_format_valid 'host'
+is_system_enabled "$DNS_CLUSTER" 'DNS_CLUSTER'
+is_procces_running
+remote_dns_health_check
+
+# Perform verification if read-only mode is enabled
+check_tulio_demo_mode
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+IFS=$'\n'
+
+if [ -z $host ]; then
+	hosts=$(cat "$TULIO/conf/dns-cluster.conf")
+else
+	hosts=$(grep "HOST='$host'" "$TULIO/conf/dns-cluster.conf")
+fi
+
+# Starting cluster loop
+for cluster in $hosts; do
+
+	# Reset user, password and hash vars
+	clear_dns_cluster_settings
+
+	# Parsing remote host parameters
+	parse_object_kv_list "$cluster"
+
+	# Deleting source records
+	cluster_cmd v-delete-dns-domains-src $DNS_USER $HOSTNAME 'no'
+	check_result $? "$HOST connection failed (cleanup)" "$E_CONNECT"
+
+	# Rebuilding dns zones
+	cluster_cmd v-rebuild-dns-domains $DNS_USER 'yes'
+	check_result $? "$HOST connection failed (rebuild)" "$E_CONNECT"
+
+done
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+# Updating pipe
+pipe="$TULIO/data/queue/dns-cluster.pipe"
+str=$(grep -n "$SCRIPT $1 $2$" $pipe | cut -f1 -d: | head -n1)
+if [ -n "$str" ]; then
+	sed -i "$str d" $pipe
+fi
+
+exit

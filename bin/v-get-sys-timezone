@@ -1,0 +1,47 @@
+#!/bin/bash
+# info: get system timezone
+# options: [FORMAT]
+#
+# This function to get system timezone
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Argument definition
+format=${1-shell}
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+# Checking timezone on Debian/Ubuntu
+if [ -f "/etc/timezone" ]; then
+	ZONE=$(cat /etc/timezone)
+
+# Checking symlynks
+elif [ -h /etc/localtime ]; then
+	ZONE=$(readlink /etc/localtime | sed "s%.*share/zoneinfo/%%")
+
+# Parsing zoneinfo (very slow)
+else
+	checksum=$(md5sum /etc/localtime | cut -d' ' -f1)
+	ZONE=$(find /usr/share/zoneinfo/ -type f -exec md5sum {} \; \
+		| grep "^$checksum" | sed "s/.*\/usr\/share\/zoneinfo\///" | head -n 1)
+fi
+
+echo $ZONE
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+exit

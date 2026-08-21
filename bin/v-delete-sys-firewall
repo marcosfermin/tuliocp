@@ -1,0 +1,50 @@
+#!/bin/bash
+# info: delete system firewall
+# options: NONE
+#
+# example: v-delete-sys-firewall
+#
+# This function disables firewall support
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+#----------------------------------------------------------#
+#                    Verifications                         #
+#----------------------------------------------------------#
+
+if [ -z "$FIREWALL_SYSTEM" ]; then
+	exit
+fi
+
+# Perform verification if read-only mode is enabled
+check_tulio_demo_mode
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+# Updating FIREWALL_SYSTEM value
+$BIN/v-change-sys-config-value "FIREWALL_SYSTEM" ""
+
+# Stopping firewall
+$BIN/v-stop-firewall
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+# Logging
+$BIN/v-log-action "system" "Warning" "Firewall" "System firewall disabled."
+log_event "$OK" "$ARGUMENTS"
+
+exit

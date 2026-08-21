@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Changes made by TulioCP due to https://github.com/marcosfermin/tuliocp/issues/3289
+/usr/local/tulio/bin/v-update-sys-queue webstats

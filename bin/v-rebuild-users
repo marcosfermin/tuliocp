@@ -1,0 +1,52 @@
+#!/bin/bash
+# info: rebuild system users
+# options: [RESTART]
+#
+# example: v-rebuild-users
+#
+# This function rebuilds user configuration for all users.
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Argument definition
+restart=$1
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# shellcheck source=/usr/local/tulio/func/rebuild.sh
+source $TULIO/func/rebuild.sh
+# shellcheck source=/usr/local/tulio/func/syshealth.sh
+source $TULIO/func/syshealth.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+#----------------------------------------------------------#
+#                    Verifications                         #
+#----------------------------------------------------------#
+
+is_format_valid 'restart'
+# Perform verification if read-only mode is enabled
+check_tulio_demo_mode
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+# Rebuild loop
+for user in $("$BIN/v-list-users" list); do
+	$BIN/v-rebuild-user "$user" "$restart"
+done
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+# Logging
+log_event "$OK" "$ARGUMENTS"
+
+exit

@@ -1,0 +1,49 @@
+#!/bin/bash
+# info: updates user role
+# options: USER ROLE
+#
+# example: v-change-user-role user administrator
+#
+# Give/revoke user administrator rights to manage all accounts as admin
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Argument definition
+user=$1
+role=$2
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+#----------------------------------------------------------#
+#                    Verifications                         #
+#----------------------------------------------------------#
+
+ROLE=$(get_user_value '$ROLE')
+
+is_format_valid 'user' 'role'
+is_object_valid 'user' 'USER' "$user"
+is_object_unsuspended 'user' 'USER' "$user"
+
+# Perform verification if read-only mode is enabled
+check_tulio_demo_mode
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+$BIN/v-log-action "system" "Warning" "Security" "User privileges changed (User: $user, Role: $role, Previous: $ROLE)."
+update_user_value "$user" '$ROLE' "$role"
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+exit

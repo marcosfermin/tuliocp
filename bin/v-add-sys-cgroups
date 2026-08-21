@@ -1,0 +1,49 @@
+#!/bin/bash
+# info: Enable cgroup support for user
+# options: NONE
+#
+# example: v-add-sys-cgroup
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+#----------------------------------------------------------#
+#                    Verifications                         #
+#----------------------------------------------------------#
+
+# Perform verification if read-only mode is enabled
+check_tulio_demo_mode
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+# Updating tulio.conf value
+$BIN/v-change-sys-config-value "RESOURCES_LIMIT" "yes"
+
+# enable cgroup for all users
+for user in $("$BIN/v-list-users" list); do
+	$BIN/v-update-user-cgroup "$user"
+done
+
+# Reload daemon
+systemctl daemon-reload
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+# Logging
+$BIN/v-log-action "system" "Info" "Plugins" "System cgroup Enforcement Enabled."
+log_event "$OK" "$ARGUMENTS"
+
+exit

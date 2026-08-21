@@ -1,0 +1,51 @@
+#!/bin/bash
+# info: delete web terminal
+# options: NONE
+#
+# example: v-delete-sys-web-terminal
+#
+# This function disables the web terminal.
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+#----------------------------------------------------------#
+#                    Verifications                         #
+#----------------------------------------------------------#
+
+if [ -z "$WEB_TERMINAL" ]; then
+	exit
+fi
+
+# Perform verification if read-only mode is enabled
+check_tulio_demo_mode
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+# Updating WEB_TERMINAL value
+$BIN/v-change-sys-config-value "WEB_TERMINAL" "false"
+
+# Stopping web terminal websocket server
+$BIN/v-stop-service "tulio-web-terminal"
+systemctl disable tulio-web-terminal
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+# Logging
+$BIN/v-log-action "system" "Warning" "Web Terminal" "Web terminal disabled."
+log_event "$OK" "$ARGUMENTS"
+
+exit

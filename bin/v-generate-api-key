@@ -1,0 +1,56 @@
+#!/bin/bash
+# info: generate api key
+# options: NONE
+#
+# example: v-generate-api-key
+#
+# This function creates a key file in $TULIO/data/keys/
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+keygen() {
+	tr < /dev/urandom -dc _A-Z-a-z-0-9 | head -c 32
+	echo
+}
+HASH=$(keygen)
+
+# Perform verification if read-only mode is enabled
+check_tulio_demo_mode
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+if [ ! -d "$TULIO/data/keys/" ]; then
+	mkdir -p $TULIO/data/keys/
+	chown tulioweb:root $TULIO/data/keys/
+	chmod 750 $TULIO/data/keys/
+fi
+
+if [[ -e "$TULIO/data/keys/$HASH" ]]; then
+	while [[ -e "$TULIO/data/keys/$HASH" ]]; do
+		HASH=$(keygen)
+	done
+fi
+
+touch $TULIO/data/keys/$HASH
+echo "$HASH"
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+# Logging
+$BIN/v-log-action "system" "Warning" "System" "New system API key generated (Key: ${HASH})."
+
+exit

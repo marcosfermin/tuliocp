@@ -1,0 +1,14 @@
+Source: tulio-web-terminal
+Package: tulio-web-terminal
+Priority: optional
+Version: 1.0.5
+Section: admin
+Maintainer: TulioCP <info@tuliocp.com>
+Homepage: https://www.tuliocp.com
+Architecture: amd64
+Depends: tulio, nodejs (>= 20.0.0)
+Description: tulio web terminal
+ tulio is an open source hosting control panel.
+ tulio has a clean and focused interface without the clutter.
+ tulio has the latest of very innovative technologies.
+ tulio is a fork from VestaCP, special thanks to vestacp.com and Serghey Rodin

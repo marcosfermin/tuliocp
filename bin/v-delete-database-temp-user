@@ -1,0 +1,69 @@
+#!/bin/bash
+# info: deletes temp database user
+# options: USER DBUSER [TYPE] [HOST]
+#
+# example: v-delete-database-temp-user wordpress tulio_sso_user mysql
+#
+# Revokes "temp user" access to a database and removes the user
+# To be used in combination with v-add-database-temp-user
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Argument definition
+user=$1
+database=$2
+dbuser=$3
+type=${4-mysql}
+host=$5
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# shellcheck source=/usr/local/tulio/func/db.sh
+source $TULIO/func/db.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+#----------------------------------------------------------#
+#                    Verifications                         #
+#----------------------------------------------------------#
+
+check_args '3' "$#" 'USER DATABASE DBUSER [TYPE] [HOST]'
+is_format_valid 'user' 'database' 'dbuser'
+is_system_enabled "$DB_SYSTEM" 'DB_SYSTEM'
+is_object_valid 'user' 'USER' "$user"
+is_object_unsuspended 'user' 'USER' "$user"
+is_object_valid 'db' 'DB' "$database"
+is_object_unsuspended 'db' 'DB' "$database"
+get_next_dbhost
+
+if [[ $dbuser != *"tulio_sso"* ]]; then
+	echo "DBUSER is invalid SSO user"
+	exit "$E_INVALID"
+fi
+
+# Perform verification if read-only mode is enabled
+check_tulio_demo_mode
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+# Get database values
+get_database_values
+
+delete_mysql_database_temp_user
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+# Logging
+$BIN/v-log-action "$user" "Info" "Database" "Revoked user access (Database: $database, User: $dbuser)."
+log_event "$OK" "$ARGUMENTS"
+
+exit

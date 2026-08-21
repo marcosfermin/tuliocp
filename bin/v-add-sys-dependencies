@@ -1,0 +1,121 @@
+#!/bin/bash
+# Add php dependencies to Tulio
+# options: [MODE]
+#
+# This function install PHPMailer and quoteshellarg as via composer
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+# upgrade config file
+source "$TULIO/install/upgrade/upgrade.conf"
+
+MODE=$1
+user="$ROOT_USER"
+
+PM_INSTALL_DIR="$TULIO/web/inc"
+QUICK_INSTALL_DIR="$TULIO/web/src"
+COMPOSER_BIN="$HOMEDIR/$user/.composer/composer"
+
+#----------------------------------------------------------#
+#                    Verifications                         #
+#----------------------------------------------------------#
+
+# Checking root permissions
+if [ "x$(id -u)" != 'x0' ]; then
+	echo "ERROR: v-add-sys-dependencies can be run executed only by root user"
+	exit 10
+fi
+
+# Ensure that $TULIO (/usr/local/tulio/) and other variables are valid.
+if [ -z "$TULIO" ]; then
+	TULIO="/usr/local/tulio"
+fi
+
+if [ -z "$HOMEDIR" ] || [ -z "$TULIO_INSTALL_DIR" ]; then
+	echo "ERROR: Environment variables not present, installation aborted."
+	exit 2
+fi
+
+# Ensure that Composer is installed for the user before continuing as it is a dependency of the PHPMailer.
+if [ ! -f "$COMPOSER_BIN" ]; then
+	$BIN/v-add-user-composer "$user"
+	if [ $? -ne 0 ]; then
+		$BIN/v-add-user-notification "$ROOT_USER" 'Composer installation failed!' '<p class="u-text-bold">Tulio will not work without Composer.</p><p>Please try running the installer manually from a shell session:<br><code>v-add-sys-dependencies</code></p><p>If this continues, <a href="https://github.com/marcosfermin/tuliocp/issues" target="_blank">open an issue on GitHub</a>.</p>'
+		exit 1
+	fi
+fi
+
+# Perform verification if read-only mode is enabled
+check_tulio_demo_mode
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+cd "$PM_INSTALL_DIR"
+rm --recursive --force ${PM_INSTALL_DIR}/vendor
+mkdir -p ${PM_INSTALL_DIR}/vendor
+chown $user: -R ${PM_INSTALL_DIR}/vendor
+
+openssl_installed=$(/usr/local/tulio/php/bin/php -m | grep openssl)
+if [ -z "$openssl_installed" ]; then
+	COMPOSER_HOME="$HOMEDIR/$user/.config/composer" user_exec /usr/bin/php $COMPOSER_BIN --quiet --no-dev install
+else
+	COMPOSER_HOME="$HOMEDIR/$user/.config/composer" user_exec $TULIO_PHP $COMPOSER_BIN --quiet --no-dev install
+fi
+
+# Check if installation was successful, if not abort script and throw error message notification and clean-up
+if [ $? -ne 0 ]; then
+	echo "ERROR: PHPMailer installation failed!"
+	echo "Please report this to our development team:"
+	echo "https://github.com/marcosfermin/tuliocp/issues"
+	$BIN/v-add-user-notification "$ROOT_USER" 'Tulio PHP dependencies installation failed!' '<p>Please <a href="https://github.com/marcosfermin/tuliocp/issues" target="_blank">open an issue on GitHub</a> to report this to our development team.</p>'
+	# Installation failed, clean up files
+	rm --recursive --force ${PM_INSTALL_DIR}/vendor
+	$BIN/v-change-sys-config-value 'USE_SERVER_SMTP' 'n'
+	$BIN/v-log-action "system" "Error" "Plugins" "PHP dependencies installation failed"
+	exit 1
+fi
+
+cd "$QUICK_INSTALL_DIR"
+rm --recursive --force ${QUICK_INSTALL_DIR}/vendor
+mkdir -p ${QUICK_INSTALL_DIR}/vendor
+chown $user: -R ${QUICK_INSTALL_DIR}/vendor
+
+if [ -z "$openssl_installed" ]; then
+	COMPOSER_HOME="$HOMEDIR/$user/.config/composer" user_exec /usr/bin/php $COMPOSER_BIN --quiet --no-dev install
+else
+	COMPOSER_HOME="$HOMEDIR/$user/.config/composer" user_exec $TULIO_PHP $COMPOSER_BIN --quiet --no-dev install
+fi
+
+# Check if installation was successful, if not abort script and throw error message notification and clean-up
+if [ $? -ne 0 ]; then
+	echo "ERROR: Quick install dependencies installation failed!"
+	echo "Please report this to our development team:"
+	echo "https://github.com/marcosfermin/tuliocp/issues"
+	$BIN/v-add-user-notification "$ROOT_USER" 'Tulio Quick Install dependencies installation failed!' '<p>Please <a href="https://github.com/marcosfermin/tuliocp/issues" target="_blank">open an issue on GitHub</a> to report this to our development team.</p>'
+	# Installation failed, clean up files
+	rm --recursive --force ${QUICK_INSTALL_DIR}/vendor
+	$BIN/v-log-action "system" "Error" "Plugins" "Quick Install dependencies installation failed"
+	exit 1
+fi
+
+# Set permissions
+chown root: -R "${PM_INSTALL_DIR}/vendor"
+chown root: -R "${QUICK_INSTALL_DIR}/vendor"
+
+#----------------------------------------------------------#
+#                       Logging                            #
+#----------------------------------------------------------#
+
+$BIN/v-log-action "system" "Info" "Plugins" "PHPMailer enabled (Version: $pm_v)."
+log_event "$OK" "$ARGUMENTS"

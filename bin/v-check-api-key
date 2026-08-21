@@ -1,0 +1,62 @@
+#!/bin/bash
+# info: check api key
+# options: KEY [IP]
+#
+# example: v-check-api-key random_key 127.0.0.1
+#
+# This function checks a key file in $TULIO/data/keys/
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+new_timestamp
+
+abort_missmatch() {
+	echo "Error: key missmatch"
+	echo "$date $time api $ip failed to login" >> $TULIO/log/auth.log
+	exit "$E_PASSWORD"
+}
+
+ip=${2-127.0.0.1}
+time_n_date=$(date +'%T %F')
+time=$(echo "$time_n_date" | cut -f 1 -d \ )
+date=$(echo "$time_n_date" | cut -f 2 -d \ )
+
+# Perform verification if read-only mode is enabled
+check_tulio_demo_mode
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+key="$(basename "$1")"
+
+# Exit if Key is unset or to short
+[[ -z $key || ${#key} -lt 16 ]] && abort_missmatch
+
+# Key file must exist
+maybe_key_path="$(readlink -e "${TULIO}/data/keys/${key}")"
+[[ -z $maybe_key_path ]] && abort_missmatch
+
+# Key file cannot be the key store
+[[ $maybe_key_path == "${TULIO}/data/keys" ]] && abort_missmatch
+
+# Key file must be in the key store
+[[ $maybe_key_path == "${TULIO}/data/keys/"* ]] || abort_missmatch
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+echo "$date $time api $ip successfully launched" >> $TULIO/log/auth.log
+
+exit

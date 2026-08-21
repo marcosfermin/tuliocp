@@ -1,0 +1,81 @@
+#!/bin/bash
+# info: list system users
+# options: [FORMAT]
+#
+# example: v-list-sys-users
+#
+# This function for obtaining the list of system users without
+# detailed information.
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Argument definition
+format=${1-shell}
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+# JSON list function
+json_list() {
+	objects=$("$BIN/v-list-users" 'list' | wc -w)
+	i=1
+	echo '['
+	while read user; do
+		if [ "$i" -lt "$objects" ]; then
+			echo -e "\t\"$user\","
+		else
+			echo -e "\t\"$user\""
+		fi
+		((++i))
+	done < <("$BIN/v-list-users" 'list')
+	echo "]"
+}
+
+# SHELL list function
+shell_list() {
+	echo "USER"
+	echo "----"
+	while read user; do
+		echo "$user"
+	done < <("$BIN/v-list-users" 'list')
+}
+
+# PLAIN list function
+plain_list() {
+	while read user; do
+		echo "$user"
+	done < <("$BIN/v-list-users" 'list')
+}
+
+# CSV list function
+csv_list() {
+	echo "USER"
+	while read user; do
+		echo "$user"
+	done < <("$BIN/v-list-users" 'list')
+}
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+# Listing data
+case $format in
+	json) json_list ;;
+	plain) plain_list ;;
+	csv) csv_list ;;
+	shell) shell_list ;;
+esac
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+exit

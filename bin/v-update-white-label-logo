@@ -1,0 +1,72 @@
+#!/bin/bash
+# info: update white label logo's
+# options: [DOWNLOAD]
+#
+# example: v-update-white-label-logo
+#
+# Replace Tulio logos with User created logo's
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Argument definition
+download=${1-no}
+reset=${2-no}
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source "$TULIO/func/main.sh"
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+if [ "$reset" = "yes" ]; then
+	rm -rf "$TULIO/web/images/custom/"
+fi
+
+if [ -f "$TULIO/web/images/custom/logo.svg" ]; then
+	cp -f "$TULIO/web/images/custom/logo.svg" "$TULIO/web/images/logo.svg"
+elif [ ! -f "$TULIO/web/images/custom/logo.svg" ] && [ "$download" = "yes" ]; then
+	# TODO(tulio): infrastructure not yet deployed
+	download_file "https://raw.githubusercontent.com/marcosfermin/tuliocp/release/web/images/logo.svg" "$TULIO/web/images/logo.svg"
+fi
+
+if [ -f "$TULIO/web/images/custom/logo.png" ]; then
+	cp -f "$TULIO/web/images/custom/logo.png" "$TULIO/web/images/logo.png"
+elif [ ! -f "$TULIO/web/images/custom/logo.png" ] && [ "$download" = "yes" ]; then
+	# TODO(tulio): infrastructure not yet deployed
+	download_file "https://raw.githubusercontent.com/marcosfermin/tuliocp/release/web/images/logo.png" "$TULIO/web/images/logo.png"
+fi
+
+if [ -f "$TULIO/web/images/custom/logo-header.svg" ]; then
+	cp -f "$TULIO/web/images/custom/logo-header.svg" "$TULIO/web/images/logo-header.svg"
+elif [ ! -f "$TULIO/web/images/custom/logo-header.svg" ] && [ "$download" = "yes" ]; then
+	# TODO(tulio): infrastructure not yet deployed
+	download_file "https://raw.githubusercontent.com/marcosfermin/tuliocp/release/web/images/logo-header.svg" "$TULIO/web/images/logo-header.svg"
+fi
+
+if [ -f "$TULIO/web/images/custom/favicon.png" ]; then
+	cp -f "$TULIO/web/images/custom/favicon.png" "$TULIO/web/images/favicon.png"
+elif [ ! -f "$TULIO/web/images/custom/favicon.png" ] && [ "$download" = "yes" ]; then
+	# TODO(tulio): infrastructure not yet deployed
+	download_file "https://raw.githubusercontent.com/marcosfermin/tuliocp/release/web/images/favicon.png" "$TULIO/web/images/favicon.png"
+fi
+
+if [ -f "$TULIO/web/images/custom/favicon.ico" ]; then
+	cp -f "$TULIO/web/images/custom/favicon.ico" "$TULIO/web/favicon.ico"
+elif [ ! -f "$TULIO/web/images/custom/favicon.ico" ] && [ "$download" = "yes" ]; then
+	# TODO(tulio): infrastructure not yet deployed
+	download_file "https://raw.githubusercontent.com/marcosfermin/tuliocp/release/web/favicon.ico" "$TULIO/web/favicon.ico"
+fi
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+exit

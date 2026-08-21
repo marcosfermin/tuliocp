@@ -1,0 +1,49 @@
+#!/bin/bash
+# info: Remove SMTP Account for logging, notification and internal mail
+# options: NONE
+#
+# example: v-delete-sys-smtp
+#
+# This function allows configuring a SMTP account for the server to use
+# for logging, notification and warn emails etc.
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+#----------------------------------------------------------#
+#                    Verifications                         #
+#----------------------------------------------------------#
+
+# Perform verification if read-only mode is enabled
+check_tulio_demo_mode
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+change_sys_value "USE_SERVER_SMTP" "false"
+change_sys_value "SERVER_SMTP_HOST" ""
+change_sys_value "SERVER_SMTP_PORT" ""
+change_sys_value "SERVER_SMTP_SECURITY" ""
+change_sys_value "SERVER_SMTP_USER" ""
+change_sys_value "SERVER_SMTP_PASSWD" ""
+change_sys_value "SERVER_SMTP_ADDR" ""
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+# Logging
+$BIN/v-log-action "system" "Info" "Mail" "Server SMTP disabled."
+log_event "$OK" "$ARGUMENTS"
+
+exit

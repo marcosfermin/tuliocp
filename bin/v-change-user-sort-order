@@ -1,0 +1,51 @@
+#!/bin/bash
+# info: updates user role
+# options: USER SORT_ORDER
+#
+# example: v-change-user-sort-order user date
+#
+# Changes web UI display sort order for specified user.
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Argument definition
+user=$1
+sort_order=$2
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+#----------------------------------------------------------#
+#                    Verifications                         #
+#----------------------------------------------------------#
+
+is_format_valid 'user'
+is_common_format_valid "$sort_order" "sort_order"
+is_object_valid 'user' 'USER' "$user"
+
+is_object_unsuspended 'user' 'USER' "$user"
+
+# Perform verification if read-only mode is enabled
+check_tulio_demo_mode
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+$BIN/v-change-user-config-value "$user" 'PREF_UI_SORT' "$sort_order"
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+# Logging
+$BIN/v-log-action "$user" "Warning" "System" "Change user setting ($key)"
+
+exit

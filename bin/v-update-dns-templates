@@ -1,0 +1,45 @@
+#!/bin/bash
+# info: update dns templates
+# options: [RESTART]
+#
+# example: v-update-dns-templates
+#
+# This function for obtaining updated dns templates from Tulio package.
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Argument definition
+restart=$1
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+# Perform verification if read-only mode is enabled
+check_tulio_demo_mode
+
+#----------------------------------------------------------#
+#                    Verifications                         #
+#----------------------------------------------------------#
+
+is_format_valid 'restart'
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+# Update templates
+cp -rf $TULIO_COMMON_DIR/templates/dns $TULIO/data/templates/
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+$BIN/v-log-action "system" "Info" "Updates" "Default DNS zone templates updated."
+exit

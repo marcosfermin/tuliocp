@@ -1,0 +1,47 @@
+#!/bin/bash
+# info: get user value
+# options: USER KEY
+#
+# example: v-get-user-value admin FNAME
+#
+# This function for obtaining certain user's parameters.
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Argument definition
+user=$1
+key=$(echo "$2" | tr '[:lower:]' '[:upper:]')
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+#----------------------------------------------------------#
+#                    Verifications                         #
+#----------------------------------------------------------#
+
+check_args '2' "$#" 'USER KEY'
+is_format_valid 'user' 'key'
+is_object_valid 'user' 'USER' "$user"
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+# Checking key
+value=$(get_user_value "$key")
+
+# Printing value
+echo "$value"
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+exit

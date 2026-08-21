@@ -1,0 +1,88 @@
+#!/bin/bash
+# info: Enable / Disable API access
+# options: STATUS
+#
+# example: v-change-sys-api enable legacy
+#          # Enable legacy api currently default on most of api based systems
+# example: v-change-sys-api enable api
+#          # Enable api
+#
+# example: v-change-sys-api disable
+#          # Disable API
+#
+# Enabled / Disable API
+
+status=$1
+version=$2
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+check_args '1' "$#" "STATUS" "VERSION"
+is_type_valid "enable,disable,remove" "$status"
+# Perform verification if read-only mode is enabled
+check_tulio_demo_mode
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+if [ "$status" = "enable" ]; then
+	if [ ! -f "$TULIO/web/api/index.php" ]; then
+		# TODO(tulio): infrastructure not yet deployed
+		wget -q https://raw.githubusercontent.com/marcosfermin/tuliocp/$RELEASE_BRANCH/web/api/index.php -O $TULIO/web/api/index.php
+		if [ ! -s "$TULIO/web/api/index.php" ]; then
+			# TODO(tulio): infrastructure not yet deployed
+			wget -q https://raw.githubusercontent.com/marcosfermin/tuliocp/release/web/api/index.php -O $TULIO/web/api/index.php
+			if [ ! -s "$TULIO/web/api/index.php" ]; then
+				# Throw error message to user
+				echo "ERROR: API installation failed."
+				# Remove empty file created by wget output
+				rm -f "$TULIO/web/api/index.php"
+				exit 1
+			fi
+		fi
+	else
+		sed -i 's|die("Error: Disabled");|//die("Error: Disabled");|g' $TULIO/web/api/index.php
+		sed -i 's|////|//|g' $TULIO/web/api/index.php
+	fi
+	if [ "$version" = "legacy" ] || [ "$version" = "all" ]; then $BIN/v-change-sys-config-value "API" "yes"; fi
+	if [ "$version" = "api" ] || [ "$version" = "all" ]; then $BIN/v-change-sys-config-value "API_SYSTEM" "1"; fi
+else
+	$BIN/v-change-sys-config-value "API" "no"
+	$BIN/v-change-sys-config-value "API_ALLOWED_IP" ""
+	$BIN/v-change-sys-config-value "API_SYSTEM" "0"
+	if [ "$status" != "remove" ]; then
+		sed -i 's|//die("Error: Disabled");|die("Error: Disabled");|g' $TULIO/web/api/index.php
+	fi
+fi
+
+if [ "$status" = "remove" ]; then
+	if [ ! -f "$TULIO/web/api/index.php" ]; then
+		echo "ERROR: API is not installed."
+		exit 1
+	else
+		rm -f "$TULIO/web/api/index.php"
+	fi
+fi
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+# Logging
+if [ "$status" = "enable" ]; then
+	$BIN/v-log-action "system" "Warning" "System" "System API access enabled."
+else
+	$BIN/v-log-action "system" "Info" "System" "System API access disabled."
+fi
+log_event "$OK" "$ARGUMENTS"

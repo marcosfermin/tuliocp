@@ -1,0 +1,55 @@
+#!/bin/bash
+# info: update domains statistics
+# options: USER
+#
+# example: v-update-web-domains-stat admin
+#
+# This function runs log analyser usage for all user webdomains.
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Argument definition
+user=$1
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# shellcheck source=/usr/local/tulio/func/domain.sh
+source $TULIO/func/domain.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+#----------------------------------------------------------#
+#                    Verifications                         #
+#----------------------------------------------------------#
+
+check_args '1' "$#" 'USER'
+is_format_valid 'user'
+is_system_enabled "$WEB_SYSTEM" 'WEB_SYSTEM'
+is_object_valid 'user' 'USER' "$user"
+is_object_unsuspended 'user' 'USER' "$user"
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+# Starting upd loop
+for domain in $(search_objects 'web' 'SUSPENDED' "no" 'DOMAIN'); do
+	get_domain_values 'web'
+	if [ -n "$STATS" ] && [ "$STATS" != 'no' ]; then
+		$BIN/v-update-web-domain-stat "$user" "$domain"
+	fi
+done
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+# Logging
+log_event "$OK" "$ARGUMENTS"
+
+exit

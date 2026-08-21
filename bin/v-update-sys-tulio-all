@@ -1,0 +1,37 @@
+#!/bin/bash
+# info: update all tulio packages
+# options: NONE
+#
+# example: v-update-sys-tulio-all
+#
+# This function of updating all tulio packages
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+# Perform verification if read-only mode is enabled
+check_tulio_demo_mode
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+# Starting update loop
+for package in tulio tulio-nginx tulio-php; do
+	$BIN/v-update-sys-tulio "$package"
+done
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+exit

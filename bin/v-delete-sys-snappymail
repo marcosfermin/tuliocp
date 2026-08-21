@@ -1,0 +1,71 @@
+#!/bin/bash
+# info: Delete SnappyMail webmail client
+# options: None
+#
+# This function removes the SnappyMail webmail client.
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+# upgrade config file
+source "$TULIO/install/upgrade/upgrade.conf"
+# Folder paths
+SM_INSTALL_DIR="/var/lib/snappymail"
+SM_LOG="/var/log/snappymail"
+#----------------------------------------------------------#
+#                    Verifications                         #
+#----------------------------------------------------------#
+# Checking root permissions
+if [ "x$(id -u)" != 'x0' ]; then
+	echo "ERROR: v-delete-sys-snappymail can only be executed by the root user"
+	exit 10
+fi
+# Ensure that $TULIO (/usr/local/tulio/) and other variables are valid.
+if [ -z "$TULIO" ]; then
+	TULIO="/usr/local/tulio"
+fi
+if [ -z "$HOMEDIR" ] || [ -z "$TULIO_INSTALL_DIR" ]; then
+	echo "ERROR: Environment variables not present, uninstallation aborted."
+	exit 2
+fi
+if [ -z "$(echo "$DB_SYSTEM" | grep -w 'mysql')" ]; then
+	echo "ERROR: Mysql not available. Uninstallation aborted"
+	exit 2
+fi
+# Get current version
+if [ -f "/var/lib/snappymail/data/VERSION" ]; then
+	version=$(cat /var/lib/snappymail/data/VERSION)
+else
+	echo "Error: SnappyMail is not installed"
+	exit 2
+fi
+# Perform verification if read-only mode is enabled
+check_tulio_demo_mode
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+rm -f -r $SM_INSTALL_DIR
+rm ~/.snappymail
+if [ -f '/usr/bin/mariadb' ]; then
+	mariadb -e "DROP DATABASE snappymail" 2>&1
+	mariadb -e "DROP USER snappymail@localhost"
+else
+	mysql -e "DROP DATABASE snappymail" 2>&1
+	mysql -e "DROP USER snappymail@localhost"
+fi
+# Updating tulio.conf
+if [ -z "$(echo "$WEBMAIL_SYSTEM" | grep -w 'snappymail')" ]; then
+	# remove snappymail from webmail list and make sure the string doesn't start with a comma
+	$BIN/v-change-sys-config-value 'WEBMAIL_SYSTEM' "$(echo "$WEBMAIL_SYSTEM" | sed "s/snappymail//g" | sed 's/^,//g')"
+fi
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+$BIN/v-log-action "system" "Info" "Plugins" "SnappyMail removed (Version: $version)."
+log_event "$OK" "$ARGUMENTS"

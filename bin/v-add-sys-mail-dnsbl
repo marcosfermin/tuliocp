@@ -1,0 +1,77 @@
+#!/bin/bash
+# info: add dnsbl entry
+# options: HOST [RESTART]
+#
+# example: v-add-sys-mail-dnsbl zen.spamhaus.org
+#
+# This function adds a new DNSBL server for Exim to check.
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Argument definition
+host=$1
+restart=${2:-yes}
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+#----------------------------------------------------------#
+#                    Verifications                         #
+#----------------------------------------------------------#
+
+check_args '1' "$#" 'HOST'
+if [[ ! "$host" =~ ^[a-zA-Z0-9.-]+(!=[0-9.,]+)?$ ]]; then
+	check_result "$E_INVALID" "invalid host format"
+fi
+
+# Perform verification if read-only mode is enabled
+check_tulio_demo_mode
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+# Create custom config if it doesn't exist
+if [ ! -f "$TULIO/conf/dnsbl.conf" ]; then
+	if [ -f "/etc/exim4/dnsbl.conf" ]; then
+		cp /etc/exim4/dnsbl.conf "$TULIO/conf/dnsbl.conf"
+	else
+		touch "$TULIO/conf/dnsbl.conf"
+	fi
+fi
+
+# Check for duplicate
+if grep -q -x "$host" "$TULIO/conf/dnsbl.conf"; then
+	check_result "$E_EXISTS" "DNSBL $host already exists"
+fi
+
+# Append host
+echo "$host" >> "$TULIO/conf/dnsbl.conf"
+
+# Check if it matches default
+if cmp -s <(sort "$TULIO/conf/dnsbl.conf") <(sort "$TULIO_INSTALL_DIR/exim/dnsbl.conf"); then
+	rm -f "$TULIO/conf/dnsbl.conf"
+	cp -f "$TULIO_INSTALL_DIR/exim/dnsbl.conf" /etc/exim4/dnsbl.conf
+else
+	cp -f "$TULIO/conf/dnsbl.conf" /etc/exim4/dnsbl.conf
+fi
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+# Logging
+$BIN/v-log-action "system" "Info" "Mail" "Added DNSBL host (Host: $host)."
+log_event "$OK" "$ARGUMENTS"
+
+# Restart exim
+$BIN/v-restart-service "$MAIL_SYSTEM" "$restart"
+
+exit

@@ -1,0 +1,14 @@
+Source: tulio-nginx
+Package: tulio-nginx
+Priority: optional
+Version: 1.30.4
+Section: admin
+Maintainer: TulioCP <info@tuliocp.com>
+Homepage: https://www.tuliocp.com
+Architecture: amd64
+Depends: tulio
+Description: tulio Nginx
+ tulio is an open source hosting control panel.
+ tulio has a clean and focused interface without the clutter.
+ tulio has the latest of very innovative technologies.
+ tulio is a fork from VestaCP, special thanks to vestacp.com and Serghey Rodin.

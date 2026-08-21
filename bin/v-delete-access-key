@@ -1,0 +1,57 @@
+#!/bin/bash
+# info: delete access key
+# options: ACCESS_KEY_ID
+#
+# example: v-delete-access-key mykey
+#
+# This function removes a key from in $TULIO/data/access-keys/
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+access_key_id=$1
+
+check_args '1' "$#" "ACCESS_KEY_ID"
+is_format_valid 'access_key_id'
+is_object_valid 'key' 'KEY' "$access_key_id"
+
+# Perform verification if read-only mode is enabled
+check_tulio_demo_mode
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+if [ ! -d "$TULIO/data/access-keys/" ]; then
+	exit "$E_NOTEXIST"
+fi
+
+if [[ -e "${TULIO}/data/access-keys/${access_key_id}" ]]; then
+	source_conf "${TULIO}/data/access-keys/${access_key_id}"
+	rm "${TULIO}/data/access-keys/${access_key_id}"
+else
+	exit "$E_NOTEXIST"
+fi
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+# Logging
+log_history "Access key $access_key_id deleted" "Info" "$USER" "API"
+log_event "$OK" "$ARGUMENTS"
+
+exit

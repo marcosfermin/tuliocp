@@ -1,0 +1,56 @@
+#!/bin/bash
+# info: revokes api key
+# options: [HASH]
+#
+# example: v-revoke-api-key mykey
+#
+# This function removes a key from in $TULIO/data/keys/
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+hash=$1
+
+args_usage='HASH'
+check_args '1' "$#" "$args_usage"
+is_format_valid 'hash'
+
+# Perform verification if read-only mode is enabled
+check_tulio_demo_mode
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+if [ ! -d "$TULIO/data/keys/" ]; then
+	exit "$E_NOTEXIST"
+fi
+
+if [[ -e "$TULIO/data/keys/$hash" ]]; then
+	rm $TULIO/data/keys/$hash
+else
+	exit "$E_NOTEXIST"
+fi
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+# Logging
+$BIN/v-log-action "system" "Info" "System" "System API key revoked (Key: $hash)."
+log_event "$OK" "$ARGUMENTS"
+
+exit

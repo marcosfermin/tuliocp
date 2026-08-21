@@ -1,0 +1,36 @@
+#!/bin/bash
+# info: Restore system configuration
+# options: [SYSTEM]
+#
+# example: v-repair-sys-config
+#
+# This function repairs or restores the system configuration file.
+
+mode=$1
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+
+#----------------------------------------------------------#
+#                        Action                            #
+#----------------------------------------------------------#
+
+if [ "$mode" = "restore" ]; then
+	syshealth_restore_system_config
+fi
+
+if [ "$mode" = "repair" ]; then
+	# load config file
+	source_conf "$TULIO/conf/tulio.conf"
+	syshealth_repair_system_config
+fi
+
+#----------------------------------------------------------#
+#                        Tulio                            #
+#----------------------------------------------------------#
+
+$BIN/v-log-action "system" "Info" "System" "Executed $mode operation on system configuration."
+log_event "$OK" "$ARGUMENTS"

@@ -1,0 +1,77 @@
+#!/bin/bash
+# info: restore file or folder
+# options: USER SNAPSHOT path
+#
+# example: v-restore-user user snapshot path
+#
+# This function for restoring database from restic snapshot.
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Argument definition
+user=$1
+snapshot=$2
+file=$3
+notify=${4-no}
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# shellcheck source=/usr/local/tulio/func/domain.sh
+source $TULIO/func/domain.sh
+# shellcheck source=/usr/local/tulio/func/ip.sh
+source $TULIO/func/ip.sh
+# shellcheck source=/usr/local/tulio/func/rebuild.sh
+source $TULIO/func/rebuild.sh
+# shellcheck source=/usr/local/tulio/func/syshealth.sh
+source $TULIO/func/syshealth.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+#----------------------------------------------------------#
+#                    Verifications                         #
+#----------------------------------------------------------#
+
+args_usage='USER SNAPSHOT DOMAIN [NOTIFY]'
+check_args '3' "$#" "$args_usage"
+is_format_valid 'user'
+is_object_valid 'user' 'USER' "$user"
+
+source_conf $TULIO/conf/restic.conf
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+tmpdir=$(mktemp -p /home/$user/tmp/ -d)
+if [ ! -f "$tmpdir/backup.conf" ]; then
+	restic --repo "${REPO%/}/$user" --password-file $USER_DATA/restic.conf dump $snapshot /home/$user/backup/backup.conf > $tmpdir/backup.conf
+	if [ "$?" -ne 0 ]; then
+		check_result "$E_NOTEXIST" "Unable to download snapshot data"
+	fi
+fi
+
+restic --repo "${REPO%/}/$user" --password-file $USER_DATA/restic.conf restore $snapshot --include $file --target /
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+rm -fr $tmpdir
+
+# Update user counters
+$BIN/v-update-user-counters $user
+$BIN/v-update-user-counters "$ROOT_USER"
+$BIN/v-update-sys-ip-counters
+
+sed -i "/v-restore-file-restic '$user' '$snapshot' '$file' /d" $TULIO/data/queue/backup.pipe
+
+# Logging
+$BIN/v-log-action "system" "Info" "Backup" "DNS Domain successfully restored (User: $user, Snapshot: $snapshot, Databse: $database)."
+$BIN/v-log-action "$user" "Info" "Backup" "DNS Domain successfully restored (User: $user, Snapshot: $snapshot, Databse: $database)."
+log_event "$OK" "$ARGUMENTS"
+exit

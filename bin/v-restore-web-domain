@@ -1,0 +1,51 @@
+#!/bin/bash
+# info: restore single web domain
+# options: USER BACKUP DOMAIN [NOTIFY]
+#
+# example: v-restore-web-domain USER BACKUP DOMAIN [NOTIFY]
+#
+# This function allows the user to restore a single web domain
+# from a backup archive.
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Argument definition
+user=$1
+backup=$2
+domain=$3
+notify=$4
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+# Perform verification if read-only mode is enabled
+check_tulio_demo_mode
+
+#----------------------------------------------------------#
+#                    Verifications                         #
+#----------------------------------------------------------#
+
+args_usage='USER BACKUP DOMAIN [NOTIFY]'
+check_args '3' "$#" "$args_usage"
+is_format_valid 'user' 'backup'
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+$BIN/v-restore-user "$user" "$backup" "$domain" 'no' 'no' 'no' 'no' 'no' "$notify"
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+log_event "$OK" "$ARGUMENTS"
+
+exit

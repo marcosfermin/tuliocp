@@ -1,0 +1,91 @@
+#!/bin/bash
+# info: add firewall blocking rule
+# options: IPV4_CIDR CHAIN
+#
+# example: v-add-firewall-ban 37.120.129.20 MAIL
+#
+# This function adds new blocking rule to system firewall
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Argument definition
+ipv4_cidr=$1
+chain=$(echo "$2" | tr '[:lower:]' '[:upper:]')
+
+# Defining absolute path for iptables and modprobe
+iptables="/sbin/iptables"
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# shellcheck source=/usr/local/tulio/func/firewall.sh
+source $TULIO/func/firewall.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+#----------------------------------------------------------#
+#                    Verifications                         #
+#----------------------------------------------------------#
+
+check_args '2' "$#" 'IPV4_CIDR CHAIN'
+is_format_valid 'ipv4_cidr' 'chain'
+is_system_enabled "$FIREWALL_SYSTEM" 'FIREWALL_SYSTEM'
+
+# Perform verification if read-only mode is enabled
+check_tulio_demo_mode
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+# Self heal iptables links
+heal_iptables_links
+
+# Checking server ip
+if [ -e "$TULIO/data/ips/$ipv4_cidr" ] || [ "$ipv4_cidr" = '127.0.0.1' ]; then
+	exit
+fi
+
+# Checking ip exclusions
+excludes="$TULIO/data/firewall/excludes.conf"
+check_excludes=$(grep "^$ipv4_cidr$" $excludes 2> /dev/null)
+if [ -n "$check_excludes" ]; then
+	exit
+fi
+
+# Checking ip in banlist
+conf="$TULIO/data/firewall/banlist.conf"
+check_ip=$(grep "IP='$ipv4_cidr' CHAIN='$chain'" $conf 2> /dev/null)
+if [ -n "$check_ip" ]; then
+	exit
+fi
+
+# Adding chain
+$BIN/v-add-firewall-chain $chain
+
+# Generating timestamp
+time_n_date=$(date +'%T %F')
+time=$(echo "$time_n_date" | cut -f 1 -d \ )
+date=$(echo "$time_n_date" | cut -f 2 -d \ )
+
+# Adding ip to banlist
+echo "IP='$ipv4_cidr' CHAIN='$chain' TIME='$time' DATE='$date'" >> $conf
+$iptables -I fail2ban-$chain 1 -s $ipv4_cidr \
+	-j DROP 2> /dev/null
+
+# Changing permissions
+chmod 660 $conf
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+# Logging
+$BIN/v-log-action "system" "Warning" "Firewall" "Banned IP address $ipv4_cidr."
+log_event "$OK" "$ARGUMENTS"
+
+exit

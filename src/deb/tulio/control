@@ -1,0 +1,14 @@
+Source: tulio
+Package: tulio
+Priority: optional
+Version: 1.10.3
+Section: admin
+Maintainer: TulioCP <info@tuliocp.com>
+Homepage: https://www.tuliocp.com
+Architecture: amd64
+Depends: bash, awk, sed, acl, sysstat, setpriv | util-linux (>= 2.33), zstd, lsb-release, idn2, jq, bubblewrap, at
+Description: tulio
+ tulio is an open source hosting control panel.
+ tulio has a clean and focused interface without the clutter.
+ tulio has the latest of very innovative technologies.
+ tulio is a fork from VestaCP, special thanks to vestacp.com and Serghey Rodin

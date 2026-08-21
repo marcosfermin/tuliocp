@@ -1,0 +1,67 @@
+#!/bin/bash
+# info: backup system user with all its objects
+# options: USER NOTIFY
+#
+# example: v-backup-user admin yes
+#
+# This function is used for backing up user with all its domains and databases.
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Argument definition
+user=$1
+format=${2-plain}
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# shellcheck source=/usr/local/tulio/func/domain.sh
+source $TULIO/func/domain.sh
+# shellcheck source=/usr/local/tulio/func/db.sh
+source $TULIO/func/db.sh
+# shellcheck source=/usr/local/tulio/func/backup.sh
+source $TULIO/func/backup.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+#----------------------------------------------------------#
+#                    Verifications                         #
+#----------------------------------------------------------#
+
+check_args '1' "$#" 'USER'
+is_format_valid 'user'
+is_system_enabled "$BACKUP_SYSTEM" 'BACKUP_SYSTEM'
+is_object_valid 'user' 'USER' "$user"
+is_object_unsuspended 'user' 'USER' "$user"
+
+# Perform verification if read-only mode is enabled
+check_tulio_demo_mode
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+source_conf $TULIO/conf/restic.conf
+
+function json_list() {
+	restic --repo "${REPO%/}/$user" --password-file $USER_DATA/restic.conf --json snapshots
+}
+
+function plain_list() {
+	restic --repo "${REPO%/}/$user" --password-file $USER_DATA/restic.conf snapshots
+}
+
+# Listing data
+case $format in
+	json) json_list ;;
+	plain) plain_list ;;
+esac
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+exit

@@ -1,0 +1,79 @@
+#!/bin/bash
+# info: rebuild system user
+# options: USER [RESTART]
+#
+# example: v-rebuild-user admin yes
+#
+# This function rebuilds system user account.
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Argument definition
+user=$1
+restart=$2
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# shellcheck source=/usr/local/tulio/func/domain.sh
+source $TULIO/func/domain.sh
+# shellcheck source=/usr/local/tulio/func/ip.sh
+source $TULIO/func/ip.sh
+# shellcheck source=/usr/local/tulio/func/rebuild.sh
+source $TULIO/func/rebuild.sh
+# shellcheck source=/usr/local/tulio/func/syshealth.sh
+source $TULIO/func/syshealth.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+#----------------------------------------------------------#
+#                    Verifications                         #
+#----------------------------------------------------------#
+
+check_args '1' "$#" 'USER [RESTART]'
+is_format_valid 'user' 'restart'
+is_object_valid 'user' 'USER' "$user"
+check_user=$(is_object_unsuspended 'user' 'USER' "$user")
+if [ -n "$check_user" ]; then
+	exit
+fi
+
+# Perform verification if read-only mode is enabled
+check_tulio_demo_mode
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+# Update disk quota
+if [ "$DISK_QUOTA" = 'yes' ]; then
+	$BIN/v-update-user-quota "$user"
+fi
+
+# Update cgroup
+if [ "$RESOURCES_LIMIT" = 'yes' ]; then
+	$BIN/v-update-user-cgroup "$user"
+fi
+
+# Rebuild user
+rebuild_user_conf
+
+# Update user counters
+$BIN/v-update-user-counters "$user"
+
+# Update account usage statistics
+$BIN/v-update-user-stats "$user"
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+# Logging
+$BIN/v-log-action "system" "Info" "System" "Rebuilt user profile (User: $user)."
+log_event "$OK" "$ARGUMENTS"
+
+exit

@@ -1,0 +1,47 @@
+#!/bin/bash
+# info: disable system wide smtp relay support
+# options:
+#
+# example: v-delete-sys-smtp-relay
+#
+# This function disables system wide smtp relay support.
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+#----------------------------------------------------------#
+#                    Verifications                         #
+#----------------------------------------------------------#
+
+# Perform verification if read-only mode is enabled
+check_tulio_demo_mode
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+change_sys_value "SMTP_RELAY" "false"
+change_sys_value "SMTP_RELAY_HOST" ""
+change_sys_value "SMTP_RELAY_PORT" ""
+change_sys_value "SMTP_RELAY_USER" ""
+
+rm -f /etc/exim4/smtp_relay.conf
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+# Logging
+$BIN/v-log-action "system" "Info" "Mail" "Global SMTP Relay disabled."
+log_event "$OK" "$ARGUMENTS"
+
+exit

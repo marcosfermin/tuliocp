@@ -1,0 +1,47 @@
+#!/bin/bash
+# info: delete backup ftp server
+# options: [NONE]
+#
+# example: v-delete-backup-host sftp
+#
+# This function deletes ftp backup host
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Argument definition
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+#----------------------------------------------------------#
+#                    Verifications                         #
+#----------------------------------------------------------#
+
+# Perform verification if read-only mode is enabled
+check_tulio_demo_mode
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+# Deleting host config
+rm -f $TULIO/conf/restic.conf
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+$BIN/v-change-sys-config-value 'BACKUP_INCREMENTAL' 'no'
+
+# Logging
+$BIN/v-log-action "system" "Info" "Backup" "Removed remote backup host (Type: Restic)."
+log_event "$OK" "$ARGUMENTS"
+
+exit

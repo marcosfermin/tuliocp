@@ -1,0 +1,56 @@
+#!/bin/bash
+# info: update tulio package/configs
+# options: PACKAGE
+#
+# example: v-update-sys-tulio tulio-php
+#
+# This function runs as apt update trigger. It pulls shell script from tulio
+# server and runs it. (tulio, tulio-nginx and tulio-php are valid options)
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Argument definition
+package=$1
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+#----------------------------------------------------------#
+#                    Verifications                         #
+#----------------------------------------------------------#
+
+# Checking arg number
+check_args '1' "$#" 'PACKAGE'
+is_tulio_package "tulio tulio-nginx tulio-php" "$package"
+
+# Perform verification if read-only mode is enabled
+check_tulio_demo_mode
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+# Update repo
+# TODO(tulio): infrastructure not yet deployed
+apt-get update -o Dir::Etc::sourcelist="sources.list.d/tulio.list" \
+	-o Dir::Etc::sourceparts="-" -o APT::Get::List-Cleanup="0" -qq
+
+# Update tulio package
+apt-get install $package -qq > /dev/null 2>&1
+check_result $? "$package update failed" "$E_UPDATE"
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+# Logging
+log_event "$OK" "$ARGUMENTS"
+
+exit

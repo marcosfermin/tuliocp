@@ -1,0 +1,76 @@
+#!/bin/bash
+# info: undo phpMyAdmin access restriction, allow its normal login form again
+# options: [mode]
+#
+# example: v-delete-sys-pma-restrict
+#
+# Reverts v-add-sys-pma-restrict: phpMyAdmin falls back to its own login
+# form again when no valid Tulio SSO token or session is present.
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+MODE=$1
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+PMA_CONFIG="/etc/phpmyadmin"
+
+#----------------------------------------------------------#
+#                    Verifications                         #
+#----------------------------------------------------------#
+
+# Perform verification if read-only mode is enabled
+check_tulio_demo_mode
+
+# Checking root permissions
+if [ "x$(id -u)" != 'x0' ]; then
+	echo "Error: Script can be run executed only by root"
+	exit 10
+fi
+
+if [ ! -e "$PMA_CONFIG/tulio-sso.inc.php" ]; then
+	echo "Error: phpMyAdmin SSO is not enabled"
+	exit 2
+fi
+
+if [ "$PMA_RESTRICT_ACCESS" != "yes" ]; then
+	echo "Error: phpMyAdmin access is not currently restricted"
+	exit 1
+fi
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+echo "<?php
+if(isset(\$_GET['tulio_token']) || isset(\$_COOKIE['SignonSession'])){
+\$cfg['Servers'][\$i]['auth_type'] = 'signon';
+\$cfg['Servers'][\$i]['SignonSession'] = 'SignonSession';
+\$cfg['Servers'][\$i]['SignonURL'] = 'tulio-sso.php';
+\$cfg['Servers'][\$i]['LogoutURL'] = 'tulio-sso.php?logout=1';
+}
+?>" > $PMA_CONFIG/tulio-sso.inc.php
+
+$BIN/v-change-sys-config-value 'PMA_RESTRICT_ACCESS' "no"
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+if [ "$MODE" != "quiet" ]; then
+	echo "phpMyAdmin access restriction has been removed"
+fi
+
+# Logging
+$BIN/v-log-action "system" "Info" "Plugins" "phpMyAdmin access restriction removed."
+log_event "$OK" "$ARGUMENTS"
+
+exit

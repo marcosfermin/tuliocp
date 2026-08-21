@@ -1,0 +1,83 @@
+#!/bin/bash
+# info: delete dnsbl entry
+# options: HOST [RESTART]
+#
+# example: v-delete-sys-mail-dnsbl zen.spamhaus.org
+#
+# This function deletes a DNSBL server from Exim.
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Argument definition
+host=$1
+restart=${2:-yes}
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+#----------------------------------------------------------#
+#                    Verifications                         #
+#----------------------------------------------------------#
+
+check_args '1' "$#" 'HOST'
+if [[ ! "$host" =~ ^[a-zA-Z0-9.-]+(!=[0-9.,]+)?$ ]]; then
+	check_result "$E_INVALID" "invalid host format"
+fi
+
+# Perform verification if read-only mode is enabled
+check_tulio_demo_mode
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+if [ ! -f "$TULIO/conf/dnsbl.conf" ]; then
+	# Custom file doesn't exist, cannot remove from it directly
+	# To properly support removing from stock list, we copy stock first
+	if [ -f "/etc/exim4/dnsbl.conf" ]; then
+		cp /etc/exim4/dnsbl.conf "$TULIO/conf/dnsbl.conf"
+	fi
+fi
+
+if [ -f "$TULIO/conf/dnsbl.conf" ]; then
+	# Ensure entry exists before trying to remove
+	if ! grep -q -x "$host" "$TULIO/conf/dnsbl.conf"; then
+		check_result "$E_NOTEXIST" "DNSBL $host doesn't exist"
+	fi
+
+	# Remove the entry
+	sed -i "\|^$host$|d" "$TULIO/conf/dnsbl.conf"
+
+	# Check if matches default
+	if cmp -s <(sort "$TULIO/conf/dnsbl.conf") <(sort "$TULIO_INSTALL_DIR/exim/dnsbl.conf"); then
+		rm -f "$TULIO/conf/dnsbl.conf"
+		if [ -f "$TULIO_INSTALL_DIR/exim/dnsbl.conf" ]; then
+			cp -f "$TULIO_INSTALL_DIR/exim/dnsbl.conf" /etc/exim4/dnsbl.conf
+		else
+			# fallback if missing for some reason
+			> /etc/exim4/dnsbl.conf
+		fi
+	else
+		cp -f "$TULIO/conf/dnsbl.conf" /etc/exim4/dnsbl.conf
+	fi
+fi
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+# Logging
+$BIN/v-log-action "system" "Info" "Mail" "Removed DNSBL host (Host: $host)."
+log_event "$OK" "$ARGUMENTS"
+
+# Restart exim
+$BIN/v-restart-service "$MAIL_SYSTEM" "$restart"
+
+exit

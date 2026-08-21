@@ -1,0 +1,62 @@
+#!/bin/bash
+# info: search domain owner
+# options: DOMAIN [TYPE]
+#
+# example: v-search-domain-owner acme.com
+#
+# This function that allows to find user objects.
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Argument definition
+domain=$1
+type=${2-any}
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+#----------------------------------------------------------#
+#                    Verifications                         #
+#----------------------------------------------------------#
+
+check_args '1' "$#" 'DOMAIN [TYPE]'
+
+is_format_valid 'domain'
+
+# Perform verification if read-only mode is enabled
+check_tulio_demo_mode
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+# Define conf
+case $type in
+	web) conf="$TULIO/data/users/*/web.conf" ;;
+	dns) conf="$TULIO/data/users/*/dns.conf" ;;
+	mail) conf="$TULIO/data/users/*/mail.conf" ;;
+	*) conf="$TULIO/data/users/*/*.conf" ;;
+esac
+
+owner=$(grep -H "DOMAIN='$domain'" $conf | head -n 1 | cut -f7 -d '/')
+if [ -z "$owner" ]; then
+	exit "$E_NOTEXIST"
+fi
+
+echo "$owner"
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+# Logging
+#log_event "$OK" "$ARGUMENTS"
+
+exit

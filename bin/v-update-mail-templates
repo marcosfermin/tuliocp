@@ -1,0 +1,56 @@
+#!/bin/bash
+# info: update mail templates
+# options: [RESTART] [SKIP]
+#
+# example: v-update-mail-templates
+#
+# This function for obtaining updated webmail templates from Tulio package.
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Argument definition
+restart=$1
+skip=$2
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+check_args '1' "$#" '[RESTART]' '[SKIP]'
+is_format_valid 'restart'
+
+# Update templates
+cp -rf $TULIO_INSTALL_DIR/templates/mail $TULIO/data/templates/
+
+# Rebuild mail domains if mail services are enabled
+if [ -z "$skip" ]; then
+	if [ -n "$MAIL_SYSTEM" ]; then
+		for user in $("$BIN/v-list-users" list); do
+			$BIN/v-rebuild-mail-domains "$user" no
+		done
+	fi
+fi
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+if [ -n "$restart" ] || [ "$restart" == "yes" ]; then
+	# Restarting web server
+	$BIN/v-restart-web "$restart"
+	check_result $? "restart" > /dev/null 2>&1
+
+	$BIN/v-restart-proxy "$restart"
+	check_result $? "restart" > /dev/null 2>&1
+fi
+$BIN/v-log-action "system" "Info" "Updates" "Default mail domain templates updated."
+exit

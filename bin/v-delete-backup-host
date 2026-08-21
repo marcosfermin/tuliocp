@@ -1,0 +1,62 @@
+#!/bin/bash
+# info: delete backup ftp server
+# options: TYPE [HOST]
+#
+# example: v-delete-backup-host sftp
+#
+# This function deletes ftp backup host
+
+#----------------------------------------------------------#
+#                Variables & Functions                     #
+#----------------------------------------------------------#
+
+# Argument definition
+type=$1
+
+# Includes
+# shellcheck source=/etc/tuliocp/tulio.conf
+source /etc/tuliocp/tulio.conf
+# shellcheck source=/usr/local/tulio/func/main.sh
+source $TULIO/func/main.sh
+# load config file
+source_conf "$TULIO/conf/tulio.conf"
+
+#----------------------------------------------------------#
+#                    Verifications                         #
+#----------------------------------------------------------#
+
+check_args '1' "$#" 'TYPE [HOST]'
+types=$(echo "$BACKUP_SYSTEM" | sed "s/,/\n/g" | grep "^$type$")
+if [ -z "$types" ]; then
+	echo "Error: invalid backup type"
+	log_event "$E_INVALID" "$ARGUMENTS"
+	exit "$E_INVALID"
+fi
+
+# Perform verification if read-only mode is enabled
+check_tulio_demo_mode
+
+#----------------------------------------------------------#
+#                       Action                             #
+#----------------------------------------------------------#
+
+# Deleting host config
+rm -f $TULIO/conf/$type.backup.conf
+
+#----------------------------------------------------------#
+#                       Tulio                             #
+#----------------------------------------------------------#
+
+# Updating tulio.conf
+bckp=$(echo "$BACKUP_SYSTEM" \
+	| sed "s/,/\n/g" \
+	| sed "s/^$type$//" \
+	| sed "/^$/d" \
+	| sed ':a;N;$!ba;s/\n/,/g')
+sed -i "s/BACKUP_SYSTEM=.*/BACKUP_SYSTEM='$bckp'/g" $TULIO/conf/tulio.conf
+
+# Logging
+$BIN/v-log-action "system" "Info" "Backup" "Removed remote backup host (Host: $host, Type: $type)."
+log_event "$OK" "$ARGUMENTS"
+
+exit
