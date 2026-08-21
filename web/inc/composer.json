@@ -5,5 +5,11 @@
         "robthree/twofactorauth": "3.0.3",
         "divinity76/cloudflare-ip-validator": "1.0.0",
         "symfony/html-sanitizer": "^8.1.1"
-    }
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/marcosfermin/phpquoteshellarg"
+        }
+    ]
 }

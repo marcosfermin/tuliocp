@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "fa62996b0e805214dab95808dc790a88",
+    "content-hash": "cc74aa83d55def24cf90795cd8ffc266",
     "packages": [
         {
             "name": "dibi/dibi",
@@ -75,44 +75,6 @@
                 "source": "https://github.com/dg/dibi/tree/v4.2.8"
             },
             "time": "2023-08-09T14:15:07+00:00"
-        },
-        {
-            "name": "tuliocp/phpquoteshellarg",
-            "version": "v1.1.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/marcosfermin/phpquoteshellarg.git",
-                "reference": "3499670c48aed5f04f2656e9cd06d6e2709e8e08"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/marcosfermin/phpquoteshellarg/zipball/3499670c48aed5f04f2656e9cd06d6e2709e8e08",
-                "reference": "3499670c48aed5f04f2656e9cd06d6e2709e8e08",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=8.0"
-            },
-            "type": "library",
-            "autoload": {
-                "files": [
-                    "src/Tuliocp/quoteshellarg/quoteshellarg.php"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "Unlicense"
-            ],
-            "description": "Improved escape shell arguments for support of special charactars",
-            "homepage": "https://github.com/tuliocp",
-            "keywords": [
-                "escapeshellarg",
-                "quoteshellarg"
-            ],
-            "support": {
-                "source": "https://github.com/marcosfermin/phpquoteshellarg/tree/v1.1.0"
-            },
-            "time": "2024-09-20T12:11:02+00:00"
         },
         {
             "name": "laravel/serializable-closure",
@@ -2039,6 +2001,43 @@
                 }
             ],
             "time": "2026-06-16T09:55:08+00:00"
+        },
+        {
+            "name": "tuliocp/phpquoteshellarg",
+            "version": "v1.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/marcosfermin/phpquoteshellarg.git",
+                "reference": "7ec9b7b77ca860a672308db4915442f620688589"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/marcosfermin/phpquoteshellarg/zipball/7ec9b7b77ca860a672308db4915442f620688589",
+                "reference": "7ec9b7b77ca860a672308db4915442f620688589",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.0"
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "src/Tuliocp/quoteshellarg/quoteshellarg.php"
+                ]
+            },
+            "license": [
+                "Unlicense"
+            ],
+            "description": "Improved escape shell arguments for support of special charactars",
+            "homepage": "https://github.com/marcosfermin/phpquoteshellarg",
+            "keywords": [
+                "escapeshellarg",
+                "quoteshellarg"
+            ],
+            "support": {
+                "source": "https://github.com/marcosfermin/phpquoteshellarg/tree/v1.1.0"
+            },
+            "time": "2026-08-21T23:46:46+00:00"
         }
     ],
     "packages-dev": [

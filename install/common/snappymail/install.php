@@ -23,13 +23,18 @@ $oConfig->Set("contacts", "pdo_password", $argv[4]);
 $oConfig->Set("plugins", "enable", "On");
 
 \SnappyMail\Repository::installPackage("plugin", "change-password");
-// TODO(tulio): infrastructure not yet deployed
-// This plugin, and the "driver_tulio_*"/"tulio_host"/"tulio_port" config keys
-// below, are published by SnappyMail as "change-password-hestia". A TulioCP
-// equivalent has to be forked and published to SnappyMail's plugin repository
-// before webmail password changes will work; until then this call is a no-op
-// failure and the config keys below are read by nothing.
-\SnappyMail\Repository::installPackage("plugin", "change-password-tulio");
+// The TulioCP password driver is bundled with TulioCP (derived from the
+// upstream SnappyMail "change-password-hestia" plugin) and deployed locally
+// into SnappyMail's plugin directory instead of being fetched from the
+// SnappyMail plugin repository.
+$sPluginSrc = __DIR__ . "/plugins/change-password-tulio";
+$sPluginDst = APP_PLUGINS_PATH . "change-password-tulio";
+if (!is_dir($sPluginDst)) {
+	mkdir($sPluginDst, 0755, true);
+}
+foreach (glob($sPluginSrc . "/*.php") as $sPluginFile) {
+	copy($sPluginFile, $sPluginDst . "/" . basename($sPluginFile));
+}
 
 $sFile = APP_PRIVATE_DATA . "configs/plugin-change-password.json";
 if (!file_exists($sFile)) {

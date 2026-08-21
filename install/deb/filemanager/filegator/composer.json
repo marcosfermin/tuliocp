@@ -44,5 +44,11 @@
 		"symfony/var-dumper": "^4.4",
 		"league/flysystem-memory": "^1.0",
 		"phpstan/phpstan": "^2.0.3"
-	}
+	},
+	"repositories": [
+		{
+			"type": "vcs",
+			"url": "https://github.com/marcosfermin/phpquoteshellarg"
+		}
+	]
 }
