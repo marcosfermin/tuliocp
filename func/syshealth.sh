@@ -360,8 +360,8 @@ function syshealth_repair_system_config() {
 		check_api_key=$(grep "API_ALLOWED_IP" $TULIO/conf/tulio.conf)
 		if [ -z "$check_api_key" ]; then
 			if [[ -z $(check_key_exists 'API_ALLOWED_IP') ]]; then
-				echo "[ ! ] Adding missing variable to tulio.conf: API_ALLOWED_IP ('allow-all')"
-				$BIN/v-change-sys-config-value "API_ALLOWED_IP" "allow-all"
+				echo "[ ! ] Adding missing variable to tulio.conf: API_ALLOWED_IP ('127.0.0.1')"
+				$BIN/v-change-sys-config-value "API_ALLOWED_IP" "127.0.0.1"
 			fi
 		fi
 	fi

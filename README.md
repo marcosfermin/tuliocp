@@ -29,17 +29,18 @@ TulioCP is an independently maintained fork of [HestiaCP](https://github.com/hes
 
 ## Supported platforms and operating systems
 
-**Debian 13 (trixie) only.**
+**Debian 13 (trixie) on amd64 (x86_64) only.**
 
-TulioCP publishes packages for the `trixie` suite of `apt.tuliocp.com` and for no
-other release. The installer refuses to run on any other operating system,
-including older Debian releases and every Ubuntu release. Support for further
-releases will be announced on [tuliocp.com](https://tuliocp.com/) when packages
-for them are published.
+TulioCP publishes `amd64` packages for the `trixie` suite of `apt.tuliocp.com`
+and for no other release or architecture. The installer refuses to run on any
+other operating system — including older Debian releases and every Ubuntu
+release — and on any other CPU architecture. Support for further releases or
+architectures will be announced on [tuliocp.com](https://tuliocp.com/) when
+packages for them are published.
 
 **NOTES:**
 
-- Tulio Control Panel requires a 64-bit operating system (AMD64/x86_64 or ARM64/aarch64). 32-bit systems are not supported.
+- Tulio Control Panel requires 64-bit AMD64/x86_64 hardware and a 64-bit operating system. There are **no** arm64/aarch64 packages, and 32-bit systems are not supported.
 - Tulio Control Panel in combination with OpenVZ 7 or lower might have issues with DNS and/or firewall. If you use a Virtual Private Server we strongly advise you to use something based on KVM or LXC.
 
 ## Installing Tulio Control Panel

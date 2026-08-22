@@ -115,9 +115,11 @@ usage() {
 	echo "    --keepbuild     Don't delete downloaded source and build folders"
 	echo "    --cross         Compile tulio package for both AMD64 and ARM64"
 	echo "    --debug         Debug mode"
-	echo "    --pkgrev <n>    Set the package revision number (default: 1)."
-	echo "                    Replaces the '-1' in the version suffix"
-	echo "                    (e.g. --pkgrev 2 → 1.0.0-2+deb12)."
+	echo "    --pkgrev <n>    Override the package revision number for this build."
+	echo "                    By default each package takes its revision from"
+	echo "                    src/deb/<pkg>/pkgrev, so a packaging-only change is"
+	echo "                    recorded in git. Replaces the '-1' in the version"
+	echo "                    suffix (e.g. --pkgrev 2 → 1.0.0-2+deb12)."
 	echo "    --release <id>  Set a release identifier appended to the package version"
 	echo "                    as '~<id>' (e.g. --release myci1 → 1.0.0-1+deb12~myci1)."
 	echo "                    Useful to distinguish custom or CI builds from official ones."
@@ -155,9 +157,35 @@ get_distro_suffix() {
 	fi
 }
 
+# Reads the Debian package revision for a package from src/deb/<pkg>/pkgrev.
+# The revision is bumped when the packaging changes (control metadata, copyright
+# file, maintainer scripts) but the upstream software version does not, so that
+# apt still sees a newer package and offers the upgrade.
+get_pkgrev() {
+	local pkg_dir="$1"
+	local tmpfile rev
+
+	tmpfile=$(mktemp) || {
+		echo >&2 "[!] Unable to create temporary file for pkgrev"
+		exit 1
+	}
+	get_branch_file "src/deb/$pkg_dir/pkgrev" "$tmpfile"
+
+	rev=$(tr -d '[:space:]' < "$tmpfile")
+	rm -f "$tmpfile"
+
+	if ! echo "$rev" | grep -qE '^[0-9]+$'; then
+		echo >&2 "[!] src/deb/$pkg_dir/pkgrev must contain a single integer, got '$rev'"
+		exit 1
+	fi
+
+	echo "$rev"
+}
+
 apply_distro_version() {
 	local control_file="$1"
 	local distro_suffix="$2"
+	local pkg_dir="$3"
 	if [ -z "$distro_suffix" ]; then
 		distro_suffix=$(get_distro_suffix)
 	fi
@@ -175,14 +203,19 @@ apply_distro_version() {
 	fi
 
 	# Build the release suffix:
-	#   - Default pkgrev is 1; override with --pkgrev <n>
+	#   - The package revision comes from src/deb/<pkg>/pkgrev, so a packaging-only
+	#     change is recorded in git; --pkgrev <n> overrides it for one-off builds.
 	#   - Without a release id : -<pkgrev>+<distro_suffix>                (e.g. -1+debian12)
 	#   - With    a release id : -<pkgrev>+<distro_suffix>~<BUILD_RELEASE> (e.g. -1+debian12~myci1)
 	# BUILD_RELEASE here may come from:
 	#   1) the --release command line option (explicit user choice), or
 	#   2) the '~<tag>' suffix auto-detected from the tulio control file's Version,
 	#      when --release was NOT specified (see detection right after BUILD_VER is read).
-	local pkg_rev="${BUILD_PKG_REV:-1}"
+	local pkg_rev="$BUILD_PKG_REV"
+	if [ -z "$pkg_rev" ] && [ -n "$pkg_dir" ]; then
+		pkg_rev=$(get_pkgrev "$pkg_dir")
+	fi
+	pkg_rev="${pkg_rev:-1}"
 	local release_suffix="-${pkg_rev}+${distro_suffix}"
 	if [ -n "$BUILD_RELEASE" ]; then
 		release_suffix="${release_suffix}~${BUILD_RELEASE}"
@@ -587,7 +620,7 @@ if [ "$NGINX_B" = true ]; then
 	if [ "$BUILD_ARCH" != "amd64" ]; then
 		sed -i "s/amd64/${BUILD_ARCH}/g" "$BUILD_DIR_TULIONGINX/DEBIAN/control"
 	fi
-	apply_distro_version "$BUILD_DIR_TULIONGINX/DEBIAN/control"
+	apply_distro_version "$BUILD_DIR_TULIONGINX/DEBIAN/control" "" "nginx"
 	install_copyright 'src/deb/nginx/copyright' "$BUILD_DIR_TULIONGINX" 'tulio-nginx'
 	get_branch_file 'src/deb/nginx/postinst' "$BUILD_DIR_TULIONGINX/DEBIAN/postinst"
 	get_branch_file 'src/deb/nginx/postrm' "$BUILD_DIR_TULIONGINX/DEBIAN/portrm"
@@ -705,7 +738,7 @@ if [ "$PHP_B" = true ]; then
 	if [ "$BUILD_ARCH" != "amd64" ]; then
 		sed -i "s/amd64/${BUILD_ARCH}/g" "$BUILD_DIR_TULIOPHP/DEBIAN/control"
 	fi
-	apply_distro_version "$BUILD_DIR_TULIOPHP/DEBIAN/control"
+	apply_distro_version "$BUILD_DIR_TULIOPHP/DEBIAN/control" "" "php"
 
 	# Extract correct libs as depends
 	PHP_BIN="$BUILD_DIR_TULIOPHP/usr/local/tulio/php/sbin/tulio-php"
@@ -771,7 +804,7 @@ if [ "$WEB_TERMINAL_B" = true ]; then
 	if [ "$BUILD_ARCH" != "amd64" ]; then
 		sed -i "s/amd64/${BUILD_ARCH}/g" "$BUILD_DIR_TULIO_TERMINAL/DEBIAN/control"
 	fi
-	apply_distro_version "$BUILD_DIR_TULIO_TERMINAL/DEBIAN/control"
+	apply_distro_version "$BUILD_DIR_TULIO_TERMINAL/DEBIAN/control" "" "web-terminal"
 	install_copyright 'src/deb/web-terminal/copyright' "$BUILD_DIR_TULIO_TERMINAL" 'tulio-web-terminal'
 	get_branch_file 'src/deb/web-terminal/postinst' "$BUILD_DIR_TULIO_TERMINAL/DEBIAN/postinst"
 	chmod +x $BUILD_DIR_TULIO_TERMINAL/DEBIAN/postinst
@@ -878,7 +911,7 @@ if [ "$TULIO_B" = true ]; then
 			if [ "$BUILD_ARCH" != "amd64" ]; then
 				sed -i "s/amd64/${BUILD_ARCH}/g" "$BUILD_DIR_TULIO/DEBIAN/control"
 			fi
-			apply_distro_version "$BUILD_DIR_TULIO/DEBIAN/control" "$os"
+			apply_distro_version "$BUILD_DIR_TULIO/DEBIAN/control" "$os" "tulio"
 			install_copyright 'src/deb/tulio/copyright' "$BUILD_DIR_TULIO" 'tulio'
 			get_branch_file 'src/deb/tulio/preinst' "$BUILD_DIR_TULIO/DEBIAN/preinst"
 			get_branch_file 'src/deb/tulio/postinst' "$BUILD_DIR_TULIO/DEBIAN/postinst"

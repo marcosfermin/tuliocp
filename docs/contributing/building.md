@@ -89,6 +89,14 @@ apt install -f
 
 ## Building for other architectures or OS releases on the same machine
 
+::: warning
+The build tooling can produce packages for architectures and releases that
+TulioCP does not publish or support. `apt.tuliocp.com` carries **amd64 packages
+for Debian 13 (trixie) only**, and the installer refuses to run anywhere else.
+Anything you build below for another target is unsupported and has to be
+installed by hand with `--with-debs`.
+:::
+
 `hst_autocompile.sh` only ever builds for the environment it's actually running in (its own `--cross` flag just makes the architecture-independent `tulio` package build for both AMD64 and ARM64 directly, with no emulation needed). To also build `tulio-nginx`, `tulio-php` or `tulio-web-terminal` (which contain compiled native code) for **other** architectures or OS releases on the same machine, use `chroot_build_all.sh` instead — it spins up and runs the unmodified `hst_autocompile.sh` inside each one.
 
 ```bash

@@ -19,6 +19,26 @@ Copyright: 2011-2018, Serghey Rodin <serghey@vestacp.com> and the Vesta Control 
            2026, the TulioCP contributors <hello@tuliocp.com>
 License: GPL-3.0+
 
+Files: usr/local/tulio/nginx/*
+Copyright: 2002-2021, Igor Sysoev
+           2011-2025, Nginx, Inc.
+License: BSD-2-clause
+Comment:
+ Everything installed under usr/local/tulio/nginx/ comes from the nginx
+ distribution (https://nginx.org/) unless listed separately below. That
+ includes the default configuration fragments in conf/ (mime.types,
+ fastcgi_params, scgi_params, uwsgi_params, koi-win, koi-utf, win-utf) and the
+ default pages in html/.
+
+Files: usr/local/tulio/nginx/conf/nginx.conf
+Copyright: 2011-2018, Serghey Rodin <serghey@vestacp.com> and the Vesta Control Panel contributors
+           2019-2025, the Hestia Control Panel contributors
+           2026, the TulioCP contributors <hello@tuliocp.com>
+License: GPL-3.0+
+Comment:
+ nginx's own default nginx.conf is removed at build time and replaced with
+ this TulioCP configuration.
+
 Files: usr/local/tulio/nginx/sbin/tulio-nginx
 Copyright: 2002-2021, Igor Sysoev
            2011-2025, Nginx, Inc.

@@ -475,6 +475,28 @@ elif [ "$type" != "ubuntu" ]; then
 	check_result 1 "You are running an unsupported OS."
 fi
 
+# TulioCP builds and publishes packages for amd64 only. Reject every other
+# architecture here, before any network work, so an unsupported machine gets a
+# clear message instead of a confusing apt failure later on.
+case $architecture in
+	x86_64)
+		ARCH="amd64"
+		;;
+	*)
+		echo
+		echo -e "\e[91mInstallation aborted\e[0m"
+		echo "===================================================================="
+		echo -e "\e[33mERROR: the CPU architecture '$architecture' is not supported.\e[0m"
+		echo ""
+		echo -e "\e[33mTulioCP publishes packages for amd64 (x86_64) only. There are no\e[0m"
+		echo -e "\e[33mpackages for arm64/aarch64 or any other architecture.\e[0m"
+		echo ""
+		echo -e "\e[33mhttps://github.com/marcosfermin/tuliocp/blob/main/README.md\e[0m"
+		echo ""
+		check_result 1 "Unsupported architecture: $architecture"
+		;;
+esac
+
 # Clear the screen once launch permissions have been verified
 clear
 
@@ -597,26 +619,6 @@ if { [ -z "$withdebs" ] || [ ! -d "$withdebs" ]; } && [ -z "$force" ]; then
 		check_result 1 "Installation aborted"
 	fi
 fi
-
-case $architecture in
-	x86_64)
-		ARCH="amd64"
-		;;
-	aarch64)
-		ARCH="arm64"
-		;;
-	*)
-		echo
-		echo -e "\e[91mInstallation aborted\e[0m"
-		echo "===================================================================="
-		echo -e "\e[33mERROR: $architecture is currently not supported!\e[0m"
-		echo -e "\e[33mPlease verify the achitecture used is currenlty supported\e[0m"
-		echo ""
-		echo -e "\e[33mhttps://github.com/marcosfermin/tuliocp/blob/main/README.md\e[0m"
-		echo ""
-		check_result 1 "Installation aborted"
-		;;
-esac
 
 #----------------------------------------------------------#
 #                       Brief Info                         #
@@ -867,6 +869,88 @@ apt=/etc/apt/sources.list.d
 # Create new folder if it doesn't exist
 mkdir -p /root/.gnupg/ && chmod 700 /root/.gnupg/
 
+# Exact OpenPGP fingerprint of the TulioCP apt repository signing key. Anything
+# else served from https://$RHOST/pubkey.gpg is rejected outright.
+TULIO_APT_KEY_FINGERPRINT='766950984D6D728AF4EE623451D8B0CD5126BF11'
+
+# import_apt_key <url> <keyring path> [expected fingerprint]
+#
+# Downloads an OpenPGP key, converts it to a binary keyring and installs it for
+# use with `signed-by=`. Every step fails closed: the previous
+# `curl -s ... | gpg --dearmor | tee ... 2>/dev/null` form silently produced an
+# empty or truncated keyring whenever the download or the conversion failed,
+# which then broke apt with an unrelated-looking error. When a fingerprint is
+# given, the key must contain exactly that fingerprint or it is discarded.
+import_apt_key() {
+	local url="$1"
+	local keyring="$2"
+	local expected_fp="${3:-}"
+	local tmpdir armored dearmored fingerprints
+
+	tmpdir=$(mktemp -d /tmp/tulio-aptkey.XXXXXXXX) || check_result 1 "Unable to create temporary directory for apt key"
+	armored="$tmpdir/key.asc"
+	dearmored="$tmpdir/key.gpg"
+
+	if ! curl -fsS --proto '=https' --tlsv1.2 --connect-timeout 15 --max-time 60 \
+		--retry 2 --retry-delay 2 -o "$armored" "$url"; then
+		rm -rf "$tmpdir"
+		check_result 1 "Failed to download the repository signing key from $url"
+	fi
+
+	if [ ! -s "$armored" ]; then
+		rm -rf "$tmpdir"
+		check_result 1 "Repository signing key downloaded empty from $url"
+	fi
+
+	if ! gpg --batch --yes --dearmor --output "$dearmored" "$armored" > /dev/null 2>&1; then
+		# Some repositories already publish the key in binary form, in which case
+		# --dearmor refuses it. Fall back to using the download as-is, but only
+		# after gpg confirms it really is a keyring.
+		if gpg --batch --show-keys --with-colons "$armored" > /dev/null 2>&1; then
+			cp "$armored" "$dearmored"
+		else
+			rm -rf "$tmpdir"
+			check_result 1 "Repository signing key from $url is not a valid OpenPGP key"
+		fi
+	fi
+
+	if [ ! -s "$dearmored" ]; then
+		rm -rf "$tmpdir"
+		check_result 1 "Repository signing key from $url converted to an empty keyring"
+	fi
+
+	fingerprints=$(gpg --batch --show-keys --with-colons "$dearmored" 2> /dev/null | awk -F: '$1 == "fpr" { print $10 }')
+	if [ -z "$fingerprints" ]; then
+		rm -rf "$tmpdir"
+		check_result 1 "Repository signing key from $url contains no usable key"
+	fi
+
+	if [ -n "$expected_fp" ]; then
+		if ! echo "$fingerprints" | grep -qx "$expected_fp"; then
+			echo
+			echo -e "\e[91mInstallation aborted\e[0m"
+			echo "===================================================================="
+			echo -e "\e[33mERROR: the repository signing key does not match the expected key.\e[0m"
+			echo ""
+			echo -e "\e[33m  URL:      $url\e[0m"
+			echo -e "\e[33m  Expected: $expected_fp\e[0m"
+			echo -e "\e[33m  Received: $(echo "$fingerprints" | tr '\n' ' ')\e[0m"
+			echo ""
+			echo -e "\e[33mThe key was NOT installed. Do not continue until this is resolved.\e[0m"
+			echo ""
+			rm -rf "$tmpdir"
+			check_result 1 "Repository signing key fingerprint mismatch for $url"
+		fi
+	fi
+
+	if ! install -m 644 "$dearmored" "$keyring"; then
+		rm -rf "$tmpdir"
+		check_result 1 "Failed to install the repository signing key at $keyring"
+	fi
+
+	rm -rf "$tmpdir"
+}
+
 # Updating system
 echo "Adding required repositories to proceed with installation:"
 echo
@@ -874,7 +958,7 @@ echo
 # Installing Nginx repo
 echo "[ * ] NGINX"
 echo "deb [arch=$ARCH signed-by=/usr/share/keyrings/nginx-keyring.gpg] https://nginx.org/packages/mainline/$VERSION/ $codename nginx" > $apt/nginx.list
-curl -s https://nginx.org/keys/nginx_signing.key | gpg --dearmor | tee /usr/share/keyrings/nginx-keyring.gpg > /dev/null 2>&1
+import_apt_key https://nginx.org/keys/nginx_signing.key /usr/share/keyrings/nginx-keyring.gpg
 
 # Installing sury PHP repo
 # add-apt-repository does not yet support signed-by see: https://bugs.launchpad.net/ubuntu/+source/software-properties/+bug/1862764
@@ -888,7 +972,7 @@ if [[ "$release" = "22.04" ]] || [[ "$release" = "24.04" ]]; then
 else
 	# Ubuntu 26.04 and later use the Sury repository instead of a PPA
 	echo "deb [arch=$ARCH signed-by=/usr/share/keyrings/sury-keyring.gpg] https://packages.sury.org/php/ $codename main" > $apt/php.list
-	curl -s https://packages.sury.org/php/apt.gpg | gpg --dearmor | tee /usr/share/keyrings/sury-keyring.gpg > /dev/null 2>&1
+	import_apt_key https://packages.sury.org/php/apt.gpg /usr/share/keyrings/sury-keyring.gpg
 fi
 
 # Installing sury Apache2 repo
@@ -901,19 +985,19 @@ fi
 if [ "$mysql" = 'yes' ]; then
 	echo "[ * ] MariaDB $mariadb_v"
 	echo "deb [arch=$ARCH signed-by=/usr/share/keyrings/mariadb-keyring.gpg] https://dlm.mariadb.com/repo/mariadb-server/$mariadb_v/repo/$VERSION $codename main" > $apt/mariadb.list
-	curl -s https://mariadb.org/mariadb_release_signing_key.asc | gpg --dearmor | tee /usr/share/keyrings/mariadb-keyring.gpg > /dev/null 2>&1
+	import_apt_key https://mariadb.org/mariadb_release_signing_key.asc /usr/share/keyrings/mariadb-keyring.gpg
 fi
 
 # Installing TulioCP repo
 echo "[ * ] Tulio Control Panel"
 echo "deb [arch=$ARCH signed-by=/usr/share/keyrings/tulio-keyring.gpg] https://$RHOST/ $codename main" > $apt/tulio.list
-curl -s "https://$RHOST/pubkey.gpg" | gpg --dearmor | tee /usr/share/keyrings/tulio-keyring.gpg > /dev/null 2>&1
+import_apt_key "https://$RHOST/pubkey.gpg" /usr/share/keyrings/tulio-keyring.gpg "$TULIO_APT_KEY_FINGERPRINT"
 
 # Installing Node.js repo
 if [ "$webterminal" = 'yes' ]; then
 	echo "[ * ] Node.js $node_v"
 	echo "deb [arch=$ARCH signed-by=/usr/share/keyrings/nodejs.gpg] https://deb.nodesource.com/node_$node_v.x nodistro main" > $apt/nodejs.list
-	curl -s https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor | tee /usr/share/keyrings/nodejs.gpg > /dev/null 2>&1
+	import_apt_key https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key /usr/share/keyrings/nodejs.gpg
 	apt-get -y install nodejs >> $LOG
 fi
 
@@ -921,7 +1005,7 @@ fi
 if [ "$postgresql" = 'yes' ]; then
 	echo "[ * ] PostgreSQL"
 	echo "deb [arch=$ARCH signed-by=/usr/share/keyrings/postgresql-keyring.gpg] https://apt.postgresql.org/pub/repos/apt/ $codename-pgdg main" > $apt/postgresql.list
-	curl -s https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor | tee /usr/share/keyrings/postgresql-keyring.gpg > /dev/null 2>&1
+	import_apt_key https://www.postgresql.org/media/keys/ACCC4CF8.asc /usr/share/keyrings/postgresql-keyring.gpg
 fi
 
 # Echo for a new line

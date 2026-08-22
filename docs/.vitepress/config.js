@@ -131,6 +131,7 @@ function sidebarDocs() {
 				{ text: 'Development', link: '/contributing/development' },
 				{ text: 'Documentation', link: '/contributing/documentation' },
 				{ text: 'Quick install app', link: '/contributing/quick-install-app' },
+				{ text: 'Releasing', link: '/contributing/releasing' },
 				{ text: 'Testing', link: '/contributing/testing' },
 				{ text: 'Translations', link: '/contributing/translations' },
 			],

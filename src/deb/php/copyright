@@ -26,6 +26,27 @@ Comment:
  text of the PHP License version 3.01 is available at
  https://www.php.net/license/3_01.txt and, on Debian systems, in
  /usr/share/common-licenses/PHP-3.01 when the php-common package is installed.
+ .
+ The PHP source tree bundles third-party components that are compiled into
+ these binaries and remain under their own licenses rather than the PHP
+ License. They include, at minimum, PCRE2 (ext/pcre/pcre2lib, BSD-3-clause
+ with exemption), timelib (ext/date/lib, MIT), libmagic (ext/fileinfo/libmagic,
+ BSD-2-clause) and libmbfl (ext/mbstring/libmbfl). The authoritative license
+ text for each is the LICENSE, COPYING or equivalent file shipped in the
+ corresponding directory of the PHP source release this package was built
+ from; see https://github.com/php/php-src.
+
+Files: usr/local/tulio/php/etc/php-fpm.conf
+       usr/local/tulio/php/lib/php.ini
+Copyright: 2011-2018, Serghey Rodin <serghey@vestacp.com> and the Vesta Control Panel contributors
+           2019-2025, the Hestia Control Panel contributors
+           2026, the TulioCP contributors <hello@tuliocp.com>
+License: GPL-3.0+
+Comment:
+ These two files are TulioCP's own configuration for the private PHP-FPM
+ build, not part of the PHP distribution. They are listed separately because
+ they are installed underneath usr/local/tulio/php/ and would otherwise be
+ covered by the PHP stanza above.
 
 License: PHP-3.01
  This product includes PHP software, freely available from
