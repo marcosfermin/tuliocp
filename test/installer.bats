@@ -111,7 +111,7 @@ line_of() {
 }
 
 @test "the wrapper uses failing, HTTPS-only downloads" {
-    grep -q "curl -fL --proto '=https'" "$WRAPPER"
+    grep -q "curl -fsSL --proto '=https'" "$WRAPPER"
     grep -q 'wget --https-only' "$WRAPPER"
     # curl -s -O and bare wget silently produced error pages before.
     run ! grep -qE '^\s*curl -s -O' "$WRAPPER"

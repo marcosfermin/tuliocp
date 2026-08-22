@@ -180,7 +180,7 @@ download_installer() {
 	local target="$1"
 
 	if command -v curl > /dev/null 2>&1; then
-		curl -fL --proto '=https' --tlsv1.2 \
+		curl -fsSL --proto '=https' --tlsv1.2 \
 			--connect-timeout 15 --max-time 300 \
 			--retry 2 --retry-delay 2 \
 			-o "$target" "$installer_url"
