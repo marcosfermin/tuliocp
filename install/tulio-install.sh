@@ -37,8 +37,8 @@ set -o pipefail
 # below fails closed: nothing is executed unless it was fetched over HTTPS
 # from the pinned commit and matches the pinned hash exactly.
 # -------------------------------------------------------- #
-TULIO_INSTALLER_REF='0000000000000000000000000000000000000000'
-TULIO_INSTALLER_SHA256_debian='0000000000000000000000000000000000000000000000000000000000000000'
+TULIO_INSTALLER_REF='2273a6cf5b6e5166ae498f898cc3bd4a2fe17807'
+TULIO_INSTALLER_SHA256_debian='026c7e6055f4e4394e1d9626aef624ee286254afc4440b6fbba917743bf63961'
 
 TULIO_INSTALLER_REPO='marcosfermin/tuliocp'
 
