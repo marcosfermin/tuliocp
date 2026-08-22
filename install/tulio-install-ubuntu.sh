@@ -53,6 +53,12 @@ VERBOSE='no'
 
 # Define software versions
 TULIO_INSTALL_VER='1.10.4'
+# Debian package revision of the tulio package to install. It must match
+# src/deb/tulio/pkgrev, which is what hst_autocompile.sh stamps into the built
+# package: the software list below pins the exact version, so a packaging-only
+# rebuild that bumps the revision leaves this installer asking apt for a
+# version the repository no longer carries.
+TULIO_PKG_REV='2'
 
 # Build the full Tulio version
 # Split base version (1.10.0) from channel suffix (~alpha / ~beta), if present
@@ -75,8 +81,8 @@ case "$os" in
 		exit 1
 		;;
 esac
-# Final version string, e.g.: 1.10.0-1+deb13~alpha / 1.10.0-1+ubuntu26.04
-TULIO_INSTALL_BUILD="${TULIO_BASE_VER}-1+${os_id}${TULIO_CHANNEL}"
+# Final version string, e.g.: 1.10.0-2+debian13~alpha / 1.10.0-2+ubuntu26.04
+TULIO_INSTALL_BUILD="${TULIO_BASE_VER}-${TULIO_PKG_REV}+${os_id}${TULIO_CHANNEL}"
 
 # Supported PHP versions
 multiphp_v=("5.6" "7.0" "7.1" "7.2" "7.3" "7.4" "8.0" "8.1" "8.2" "8.3" "8.4" "8.5")

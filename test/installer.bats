@@ -262,6 +262,33 @@ setup_keyring_fixtures() {
     done
 }
 
+@test "the installers ask apt for the package revision that is actually built" {
+    # The software list pins tulio to an exact version, and reprepro keeps only
+    # the newest revision of a package, so an installer still asking for -1
+    # after a -2 rebuild makes every fresh install fail at apt-get install.
+    pkgrev=$(cat "$REPO_ROOT/src/deb/tulio/pkgrev")
+    for script in "$DEBIAN" "$UBUNTU"; do
+        grep -q "^TULIO_PKG_REV='${pkgrev}'\$" "$script"
+        grep -q 'TULIO_INSTALL_BUILD="\${TULIO_BASE_VER}-\${TULIO_PKG_REV}+\${os_id}\${TULIO_CHANNEL}"' "$script"
+        # No hard-coded revision left behind.
+        run ! grep -q 'TULIO_INSTALL_BUILD=.*BASE_VER}-[0-9]' "$script"
+    done
+}
+
+@test "the wrapper's pin matches the second stage in this tree" {
+    # The wrapper refuses to run a second stage whose hash differs from the pin,
+    # so a commit that edits install/tulio-install-debian.sh without refreshing
+    # the pin (bash src/release/pin-installer.sh HEAD) publishes an installer
+    # that either aborts or silently runs the previous revision.
+    pinned_sha=$(grep "^TULIO_INSTALLER_SHA256_debian=" "$WRAPPER" | cut -d"'" -f2)
+    tree_sha=$(sha256sum "$DEBIAN" | awk '{print $1}')
+    [ "$pinned_sha" = "$tree_sha" ]
+
+    pinned_ref=$(grep '^TULIO_INSTALLER_REF=' "$WRAPPER" | cut -d"'" -f2)
+    ref_sha=$(git -C "$REPO_ROOT" show "$pinned_ref:install/tulio-install-debian.sh" | sha256sum | awk '{print $1}')
+    [ "$ref_sha" = "$pinned_sha" ]
+}
+
 @test "the build reads the package revision from src/deb/<pkg>/pkgrev" {
     grep -q 'get_branch_file "src/deb/\$pkg_dir/pkgrev"' "$REPO_ROOT/src/hst_autocompile.sh"
     grep -q 'apply_distro_version "\$BUILD_DIR_TULIONGINX/DEBIAN/control" "" "nginx"' "$REPO_ROOT/src/hst_autocompile.sh"
