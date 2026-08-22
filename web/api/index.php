@@ -67,9 +67,15 @@ function api_legacy(array $request_data) {
 	}
 
 	if ($settings["config"]["API_ALLOWED_IP"] != "allow-all") {
-		$ip_list = explode(",", $settings["config"]["API_ALLOWED_IP"]);
-		$ip_list[] = "";
-		if (!in_array(get_real_user_ip(), $ip_list)) {
+		// Empty entries are dropped deliberately: get_real_user_ip() returns ""
+		// when REMOTE_ADDR is missing or unparseable, and an "" entry in the
+		// allow list would turn that into a match and wave the caller through.
+		$ip_list = array_filter(
+			array_map("trim", explode(",", $settings["config"]["API_ALLOWED_IP"])),
+			"strlen",
+		);
+		$caller_ip = get_real_user_ip();
+		if ($caller_ip === "" || !in_array($caller_ip, $ip_list, true)) {
 			api_error(E_FORBIDDEN, "Error: IP is not allowed to connect with API", $hst_return);
 		}
 	}
@@ -237,9 +243,15 @@ function api_connection(array $request_data) {
 
 	// Check if API access is enabled for the user
 	if ($settings["config"]["API_ALLOWED_IP"] != "allow-all") {
-		$ip_list = explode(",", $settings["config"]["API_ALLOWED_IP"]);
-		$ip_list[] = "";
-		if (!in_array($v_real_user_ip, $ip_list) && !in_array("0.0.0.0", $ip_list)) {
+		// See the note in api_legacy(): an "" entry would let a caller with no
+		// usable REMOTE_ADDR past the allow list.
+		$ip_list = array_filter(
+			array_map("trim", explode(",", $settings["config"]["API_ALLOWED_IP"])),
+			"strlen",
+		);
+		if (in_array("0.0.0.0", $ip_list, true)) {
+			// Explicit "allow every address" marker, kept for compatibility.
+		} elseif ($v_real_user_ip === "" || !in_array($v_real_user_ip, $ip_list, true)) {
 			api_error(E_FORBIDDEN, "IP is not allowed to connect with API", $hst_return);
 		}
 	}

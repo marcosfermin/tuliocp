@@ -32,7 +32,11 @@ get_public_ipv4() {
 	if [ -z "$answer" ]; then
 		return 1
 	fi
-	if ! [[ "$answer" =~ $REGEX_IPV4 ]]; then
+
+	# Deliberately stricter than REGEX_IPV4, which also accepts a trailing dot:
+	# this value is fed straight into v-change-sys-ip-nat, so only an exact
+	# dotted-quad is acceptable.
+	if ! [[ "$answer" =~ ^(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])(\.(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])){3}$ ]]; then
 		return 1
 	fi
 

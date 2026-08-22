@@ -1,10 +1,11 @@
-/*
+# Paths are absolute on the deployed site, which serves this build under
+# /docs/panel/ (see `base` in docs/.vitepress/config.js).
+/docs/panel/*
 	X-Frame-Options: DENY
 	X-Content-Type-Options: nosniff
 	Referrer-Policy: no-referrer
 	Permissions-Policy: document-domain=()
 
-/assets/*
+/docs/panel/assets/*
 	cache-control: max-age=31536000
 	cache-control: immutable
-
