@@ -14,15 +14,19 @@ export default defineConfig({
 	lastUpdated: true,
 	cleanUrls: false,
 
+	// `head` entries are emitted verbatim — VitePress does not prepend `base` to
+	// them the way it does for `themeConfig.logo`, so these hrefs must spell out
+	// /docs/panel/ themselves. A bare /logo.svg here would silently resolve to the
+	// marketing site's asset at the domain root.
 	head: [
-		['link', { rel: 'icon', sizes: 'any', href: '/docs/panel/favicon.ico' }],
-		['link', { rel: 'icon', type: 'image/svg+xml', sizes: '16x16', href: '/docs/panel/logo.svg' }],
+		['link', { rel: 'icon', sizes: '32x32', href: '/docs/panel/favicon.ico' }],
+		['link', { rel: 'icon', type: 'image/svg+xml', href: '/docs/panel/logo.svg' }],
 		[
 			'link',
 			{ rel: 'apple-touch-icon', sizes: '180x180', href: '/docs/panel/apple-touch-icon.png' },
 		],
 		['link', { rel: 'manifest', href: '/docs/panel/site.webmanifest' }],
-		['meta', { name: 'theme-color', content: '#b7236a' }],
+		['meta', { name: 'theme-color', content: '#2b5b96' }],
 	],
 
 	themeConfig: {
