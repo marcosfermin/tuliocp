@@ -873,6 +873,60 @@ mkdir -p /root/.gnupg/ && chmod 700 /root/.gnupg/
 # else served from https://$RHOST/pubkey.gpg is rejected outright.
 TULIO_APT_KEY_FINGERPRINT='766950984D6D728AF4EE623451D8B0CD5126BF11'
 
+# verify_apt_keyring <keyring path> <expected fingerprint> <url>
+#
+# Accepts a keyring only when it holds EXACTLY one primary key and that key's
+# fingerprint is the expected one. Subkeys are allowed, but only the ones that
+# belong to that primary: `gpg --show-keys --with-colons` prints every `sub`
+# record underneath the `pub` record that owns it, so once a single `pub` is
+# the only primary accepted there is no other key for a subkey to hang off.
+#
+# Looking for the expected fingerprint anywhere in the listing - what this used
+# to do - accepted a keyring carrying the real key *and* an attacker's extra
+# primary key, after which apt trusted repository metadata signed by either.
+verify_apt_keyring() {
+	local keyring="$1"
+	local expected_fp="$2"
+	local url="$3"
+	local primaries primary_count primary_fp reason
+
+	# One fingerprint per primary key: the `fpr` that directly follows a `pub`.
+	primaries=$(gpg --batch --show-keys --with-colons "$keyring" 2> /dev/null | awk -F: '
+		$1 == "pub" { pending = 1; next }
+		$1 == "fpr" && pending { print $10; pending = 0; next }
+		$1 == "sub" || $1 == "uid" { pending = 0 }
+	')
+	primary_count=$(echo "$primaries" | grep -c '[^[:space:]]')
+	primary_fp=$(echo "$primaries" | head -n 1)
+
+	reason=''
+	if [ "$primary_count" -eq 0 ]; then
+		reason='it contains no primary key'
+	elif [ "$primary_count" -gt 1 ]; then
+		reason="it contains $primary_count primary keys, only the pinned one is allowed"
+	elif [ "$primary_fp" != "$expected_fp" ]; then
+		reason='its primary key is not the pinned one'
+	fi
+
+	if [ -z "$reason" ]; then
+		return 0
+	fi
+
+	echo
+	echo -e "\e[91mInstallation aborted\e[0m"
+	echo "===================================================================="
+	echo -e "\e[33mERROR: the repository signing key does not match the expected key.\e[0m"
+	echo ""
+	echo -e "\e[33m  Reason:   $reason\e[0m"
+	echo -e "\e[33m  URL:      $url\e[0m"
+	echo -e "\e[33m  Expected: $expected_fp\e[0m"
+	echo -e "\e[33m  Received: $(echo "$primaries" | tr '\n' ' ')\e[0m"
+	echo ""
+	echo -e "\e[33mThe key was NOT installed. Do not continue until this is resolved.\e[0m"
+	echo ""
+	return 1
+}
+
 # import_apt_key <url> <keyring path> [expected fingerprint]
 #
 # Downloads an OpenPGP key, converts it to a binary keyring and installs it for
@@ -880,7 +934,7 @@ TULIO_APT_KEY_FINGERPRINT='766950984D6D728AF4EE623451D8B0CD5126BF11'
 # `curl -s ... | gpg --dearmor | tee ... 2>/dev/null` form silently produced an
 # empty or truncated keyring whenever the download or the conversion failed,
 # which then broke apt with an unrelated-looking error. When a fingerprint is
-# given, the key must contain exactly that fingerprint or it is discarded.
+# given, the keyring must hold that key and nothing else or it is discarded.
 import_apt_key() {
 	local url="$1"
 	local keyring="$2"
@@ -926,18 +980,7 @@ import_apt_key() {
 	fi
 
 	if [ -n "$expected_fp" ]; then
-		if ! echo "$fingerprints" | grep -qx "$expected_fp"; then
-			echo
-			echo -e "\e[91mInstallation aborted\e[0m"
-			echo "===================================================================="
-			echo -e "\e[33mERROR: the repository signing key does not match the expected key.\e[0m"
-			echo ""
-			echo -e "\e[33m  URL:      $url\e[0m"
-			echo -e "\e[33m  Expected: $expected_fp\e[0m"
-			echo -e "\e[33m  Received: $(echo "$fingerprints" | tr '\n' ' ')\e[0m"
-			echo ""
-			echo -e "\e[33mThe key was NOT installed. Do not continue until this is resolved.\e[0m"
-			echo ""
+		if ! verify_apt_keyring "$dearmored" "$expected_fp" "$url"; then
 			rm -rf "$tmpdir"
 			check_result 1 "Repository signing key fingerprint mismatch for $url"
 		fi

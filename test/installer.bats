@@ -150,6 +150,100 @@ line_of() {
     done
 }
 
+@test "the keyring check is a whole-keyring check, not a substring match" {
+    for script in "$DEBIAN" "$UBUNTU"; do
+        grep -q 'verify_apt_keyring "\$dearmored" "\$expected_fp" "\$url"' "$script"
+        # `grep -qx "$expected_fp"` over every fpr line accepted a keyring that
+        # carried the pinned key plus an attacker's own primary key.
+        run ! grep -q 'fingerprints" | grep -qx' "$script"
+    done
+}
+
+# --- apt key import: behaviour ------------------------------------------- #
+#
+# verify_apt_keyring is the one piece of the installer that can be executed in
+# isolation, so it is tested for real against keyrings built here: the pinned
+# key alone must be accepted, and the same keyring with a second, throwaway
+# primary key appended must be rejected.
+
+# Extracts verify_apt_keyring from an installer into a sourceable file.
+extract_verify_apt_keyring() {
+    sed -n '/^verify_apt_keyring() {/,/^}$/p' "$1" > "$BATS_TEST_TMPDIR/verify.sh"
+    [ -s "$BATS_TEST_TMPDIR/verify.sh" ]
+    # shellcheck disable=SC1090
+    source "$BATS_TEST_TMPDIR/verify.sh"
+}
+
+# Generates a throwaway primary key (with a subkey) and exports it into
+# <keyring>. Echoes the primary key's fingerprint.
+make_throwaway_key() {
+    local uid="$1" keyring="$2" fp
+    gpg --batch --quiet --passphrase '' --quick-generate-key "$uid" default default never > /dev/null 2>&1
+    fp=$(gpg --batch --with-colons --list-keys "$uid" | awk -F: '$1 == "pub" { pub = 1; next } $1 == "fpr" && pub { print $10; exit }')
+    [ -n "$fp" ]
+    gpg --batch --quiet --quick-add-key "$fp" default sign never > /dev/null 2>&1
+    gpg --batch --quiet --export "$fp" > "$keyring"
+    [ -s "$keyring" ]
+    echo "$fp"
+}
+
+setup_keyring_fixtures() {
+    command -v gpg > /dev/null || skip "gpg is not installed"
+    export GNUPGHOME="$BATS_TEST_TMPDIR/gnupg"
+    mkdir -p "$GNUPGHOME"
+    chmod 700 "$GNUPGHOME"
+    GOOD_FP=$(make_throwaway_key "TulioCP Test Signing Key <test@tuliocp.invalid>" "$BATS_TEST_TMPDIR/good.gpg")
+    EVIL_FP=$(make_throwaway_key "Not TulioCP <evil@example.invalid>" "$BATS_TEST_TMPDIR/evil.gpg")
+    [ "$GOOD_FP" != "$EVIL_FP" ]
+    # A keyring is a concatenation of key blocks, which is exactly how an
+    # attacker would smuggle an extra key past a "contains the right one" test.
+    cat "$BATS_TEST_TMPDIR/good.gpg" "$BATS_TEST_TMPDIR/evil.gpg" > "$BATS_TEST_TMPDIR/good_plus_evil.gpg"
+}
+
+@test "verify_apt_keyring accepts the pinned key and only the pinned key" {
+    setup_keyring_fixtures
+    for script in "$DEBIAN" "$UBUNTU"; do
+        extract_verify_apt_keyring "$script"
+
+        # The legitimate key, subkeys and all.
+        run verify_apt_keyring "$BATS_TEST_TMPDIR/good.gpg" "$GOOD_FP" "https://apt.example/pubkey.gpg"
+        [ "$status" -eq 0 ]
+
+        # The legitimate key with an attacker's primary key appended.
+        run verify_apt_keyring "$BATS_TEST_TMPDIR/good_plus_evil.gpg" "$GOOD_FP" "https://apt.example/pubkey.gpg"
+        [ "$status" -ne 0 ]
+        [[ "$output" == *"2 primary keys"* ]]
+        [[ "$output" == *"The key was NOT installed"* ]]
+
+        # A wholly different key.
+        run verify_apt_keyring "$BATS_TEST_TMPDIR/evil.gpg" "$GOOD_FP" "https://apt.example/pubkey.gpg"
+        [ "$status" -ne 0 ]
+        [[ "$output" == *"not the pinned one"* ]]
+
+        # An empty or non-key file.
+        echo "not a key" > "$BATS_TEST_TMPDIR/junk.gpg"
+        run verify_apt_keyring "$BATS_TEST_TMPDIR/junk.gpg" "$GOOD_FP" "https://apt.example/pubkey.gpg"
+        [ "$status" -ne 0 ]
+        [[ "$output" == *"no primary key"* ]]
+    done
+}
+
+@test "verify_apt_keyring accepts subkeys of the pinned key" {
+    setup_keyring_fixtures
+    extract_verify_apt_keyring "$DEBIAN"
+
+    # Add two more subkeys to the pinned primary: subkeys must not be mistaken
+    # for extra primary keys.
+    gpg --batch --quiet --passphrase '' --quick-add-key "$GOOD_FP" default encr never > /dev/null 2>&1
+    gpg --batch --quiet --passphrase '' --quick-add-key "$GOOD_FP" default auth never > /dev/null 2>&1
+    gpg --batch --quiet --export "$GOOD_FP" > "$BATS_TEST_TMPDIR/good_subkeys.gpg"
+    subkeys=$(gpg --batch --with-colons --show-keys "$BATS_TEST_TMPDIR/good_subkeys.gpg" | grep -c '^sub:')
+    [ "$subkeys" -ge 3 ]
+
+    run verify_apt_keyring "$BATS_TEST_TMPDIR/good_subkeys.gpg" "$GOOD_FP" "https://apt.example/pubkey.gpg"
+    [ "$status" -eq 0 ]
+}
+
 # --- Documented support matrix ------------------------------------------- #
 
 @test "README and docs advertise amd64 only" {
