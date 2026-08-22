@@ -52,7 +52,7 @@ TULIO_COMMON_DIR="$TULIO/install/common"
 VERBOSE='no'
 
 # Define software versions
-TULIO_INSTALL_VER='1.10.3'
+TULIO_INSTALL_VER='1.10.4'
 
 # Build the full Tulio version
 # Split base version (1.10.0) from channel suffix (~alpha / ~beta), if present
