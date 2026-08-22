@@ -290,8 +290,6 @@ public_name = PLAIN
 hide client_send = ^SMTP_RELAY_USER^SMTP_RELAY_PASS
 ```
 
-[See forum topic for more info](https://forum.tuliocp.com/t/oracle-cloud-email-as-relay-doesnt-works/11304/19?)
-
 ## Setting up mail hooks
 
 Some SMTP relay services might require you to set the domain within the SMTP relay account. To automate this hooks have been added to v-add-mail-domain and v-delete-mail domains.

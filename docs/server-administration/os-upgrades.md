@@ -4,6 +4,14 @@
 Before upgrading your operating system make sure to make a backup! We do not provide support for broken operating system installations. We only provide this page for information about Tulio issues that may come up while upgrading.
 :::
 
+::: warning Debian 13 is the only supported target
+TulioCP publishes packages for Debian 13 (trixie) only, so the only upgrade path
+that ends on a supported system is **Debian 12 Bookworm to Debian 13 Trixie**,
+below. The remaining sections are inherited from the upstream project and are
+kept as background for operators coming from an older or Ubuntu-based install;
+following them will not produce a supported TulioCP system.
+:::
+
 ## General
 
 ::: info

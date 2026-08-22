@@ -2,13 +2,16 @@
 
 One of Tulio’s most requested feature is to add support for Softaculous. However, due to the required use of Ioncube in tulio-php and because we are against the use of proprietary software, we have instead developed our own **Quick install app** solution.
 
-More information can be found in the [tulio-quick-install repo](https://github.com/marcosfermin/tulio-quick-install/blob/main/Example/ExampleSetup.php)
+TulioCP does not publish its own example repository yet. The example app used
+below is the one maintained by HestiaCP, the project TulioCP was forked from;
+the installer API is unchanged, so it applies directly. See the
+[hestia-quick-install repo](https://github.com/hestiacp/hestia-quick-install/blob/main/Example/ExampleSetup.php).
 
 ## Creating a new app
 
 1. Make a new folder called `Example` in `/usr/local/tulio/web/src/app/WebApp/Installers/`
 2. Create a file named `ExampleSetup.php`.
-3. Copy the [example file’s content](https://github.com/marcosfermin/tulio-quick-install/blob/main/Example/ExampleSetup.php) into your new file.
+3. Copy the [example file’s content](https://github.com/hestiacp/hestia-quick-install/blob/main/Example/ExampleSetup.php) into your new file.
 
 This will add an app called “Example” when you open the **Quick install app** page.
 

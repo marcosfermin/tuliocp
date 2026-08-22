@@ -13,7 +13,7 @@ title: Install
   <PageHeader>
     <template #title>Install</template>
     <template #aside>
-      <a class="header-button" href="./docs/introduction/getting-started.html#requirements">
+      <a class="header-button" href="./introduction/getting-started.html#requirements">
         View requirements
       </a>
     </template>

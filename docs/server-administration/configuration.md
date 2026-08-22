@@ -15,8 +15,6 @@ A good starting point for every software is to check the official docs:
 - For Apache2: [Apache Docs](http://httpd.apache.org/docs/2.4/)
 - For PHP-FPM: [PHP Docs](https://www.php.net/manual/en/install.fpm.configuration.php)
 
-You could also try [our Forum](https://forum.tuliocp.com)
-
 ## Can I use TulioCP behind Cloudflare CDN?
 
 By default the [Cloudflare Proxy](https://developers.cloudflare.com/fundamentals/get-started/reference/network-ports/) supports only a limited number of ports. This means that Cloudflare will not forward port 8083, which is the default port for Tulio. To change the Tulio port to one that Cloudflare will forward, run this command:

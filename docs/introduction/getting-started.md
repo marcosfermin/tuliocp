@@ -13,12 +13,12 @@ Tulio must be installed on top of a fresh operating system installation to ensur
 See custom installation below for further details.
 :::
 
-|                      | Minimum                                             | Recommended                        |
-| -------------------- | --------------------------------------------------- | ---------------------------------- |
-| **CPU**              | 1 core, 64-bit                                      | 4 cores                            |
-| **Memory**           | 1 GB (no SpamAssassin and ClamAV)                   | 4 GB                               |
-| **Disk**             | 10 GB HDD                                           | 40 GB SSD                          |
-| **Operating System** | Debian 11, 12, 13<br>Ubuntu 22.04, 24.04, 26.04 LTS | Latest Debian<br>Latest Ubuntu LTS |
+|                      | Minimum                           | Recommended        |
+| -------------------- | --------------------------------- | ------------------ |
+| **CPU**              | 1 core, 64-bit                    | 4 cores            |
+| **Memory**           | 1 GB (no SpamAssassin and ClamAV) | 4 GB               |
+| **Disk**             | 10 GB HDD                         | 40 GB SSD          |
+| **Operating System** | Debian 13 (trixie)                | Debian 13 (trixie) |
 
 ::: warning
 Tulio only runs on AMD64 / x86_64 and ARM64 / aarch64 processors. It also requires a 64bit operating system!
@@ -27,11 +27,14 @@ We currently do not support i386 or ARM7-based processors.
 
 ### Supported operating systems
 
-- Debian 11, 12 or 13
-- Ubuntu 22.04, 24.04 or 26.04
+- Debian 13 (trixie)
 
 ::: warning
-Tulio does not support non-LTS Operating systems. If you install it on, for example, Ubuntu 23.10, you will not receive support from us.
+Debian 13 is the only supported operating system. TulioCP publishes packages for
+the `trixie` suite only, and the installer refuses to run on anything else —
+including older Debian releases and every Ubuntu release. Support for further
+releases will be announced at [tuliocp.com](https://tuliocp.com/) when packages
+for them are published.
 :::
 
 ## Regular installation

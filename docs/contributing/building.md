@@ -27,7 +27,7 @@ cd ./src/
 
 cd ../install
 
-bash tulio-install-{os}.sh --with-debs /tmp/tuliocp-src/deb/
+bash tulio-install-debian.sh --with-debs /tmp/tuliocp-src/deb/
 ```
 
 Any option can be appended to the installer command. [See the complete list](../introduction/getting-started#list-of-installation-options).

@@ -12,7 +12,7 @@ Development builds are unstable. If you encounter a bug, please [report it via G
 
 These are example instructions for creating a virtual machine running Tulio for development.
 
-These instructions use [Multipass](https://multipass.run/) to create an Ubuntu VM. Feel free to adapt the commands for any virtualization software you prefer.
+These instructions use [Multipass](https://multipass.run/) to create a Debian 13 VM, the only operating system TulioCP supports. Feel free to adapt the commands for any virtualization software you prefer.
 
 1. [Install Multipass](https://multipass.run/install) for your OS
 
@@ -22,18 +22,18 @@ These instructions use [Multipass](https://multipass.run/) to create an Ubuntu V
    git clone https://github.com/YourUsername/tuliocp.git ~/projects
    ```
 
-1. Create an Ubuntu VM with at least 2GB of memory and 15GB of disk space
+1. Create a Debian 13 VM with at least 2GB of memory and 15GB of disk space
 
    _(if running VM on ARM architecture e.g. Apple M1, use at least 12GB of memory)_
 
    ```bash
-   multipass launch --name tulio-dev --memory 4G --disk 15G --cpus 4
+   multipass launch debian:13 --name tulio-dev --memory 4G --disk 15G --cpus 4
    ```
 
 1. Mount your cloned repository to the VM's home directory
 
    ```bash
-   multipass mount ~/projects/tuliocp tulio-dev:/home/ubuntu/tuliocp
+   multipass mount ~/projects/tuliocp tulio-dev:/home/debian/tuliocp
    ```
 
 1. SSH into the VM as root, then install some required packages
@@ -56,7 +56,7 @@ These instructions use [Multipass](https://multipass.run/) to create an Ubuntu V
 
    ```bash
    cd ../install
-   bash tulio-install-ubuntu.sh --hostname demo.tuliocp.com --email admin@example.com --username admin --password Password123 --with-debs /tmp/tuliocp-src/deb/ --interactive no --force
+   bash tulio-install-debian.sh --hostname demo.tuliocp.com --email admin@example.com --username admin --password Password123 --with-debs /tmp/tuliocp-src/deb/ --interactive no --force
    ```
 
 1. Reboot the VM (and exit SSH session)
@@ -86,7 +86,7 @@ Sometimes (with Multipass), the mapping between the source code directory on you
 
 ```bash
 multipass unmount tulio-dev
-multipass mount ~/projects/tuliocp tulio-dev:/home/ubuntu/tuliocp
+multipass mount ~/projects/tuliocp tulio-dev:/home/debian/tuliocp
 ```
 
 :::

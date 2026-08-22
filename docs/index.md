@@ -1,46 +1,67 @@
----
-layout: home
+# TulioCP documentation
 
-title: Tulio Control Panel
-titleTemplate: Open-source web server control panel.
+TulioCP is an open-source web server control panel for Debian 13. It is a fork
+of HestiaCP, itself derived from VestaCP — see [Attribution](/attribution).
 
-hero:
-  name: Tulio Control Panel
-  text: Open-source web server control panel
-  tagline: Fast, reliable, open-source. The control panel you’ve always wanted is just a command away.
-  image:
-    src: /logo.svg
-    alt: Tulio Logo
-  actions:
-    - theme: brand
-      text: Get started
-      link: /docs/introduction/getting-started
-    - theme: alt
-      text: Try the demo
-      link: https://demo.tuliocp.com:8083/
-    - theme: alt
-      text: View on GitHub
-      link: https://github.com/marcosfermin/tuliocp
+## Getting started
 
-features:
-  - icon: 🚀
-    title: Fast & easy to learn
-    details: Tulio is made with ease of use in mind. Creating a user or a website is as easy as clicking a button and filling out a couple of fields, while advanced features are easily accessible.
-    link: /docs/introduction/getting-started
-    linkText: Documentation
-  - icon: ❤️
-    title: Made with love & pride
-    details: Tulio is open-source software that is built by passionate people from around the world. This means that the code is reviewed by multiple people and that anybody can contribute to it!
-    link: /team
-    linkText: See the team
-  - icon: 🛠️
-    title: Extendable & powerful
-    details: Tulio is extendable while being easy to learn. You can build your own themes, web templates, quick install applications and can interact with it using third party software via its API.
-    link: /docs/contributing/development
-    linkText: Help develop Tulio
-  - icon: 🤝
-    title: Supported by the community
-    details: Tulio has a great support community - join the forum! To keep the project running, we rely on donations, which can be made via PayPal or cryptocurrency.
-    link: /donate
-    linkText: Donate
----
+- [Getting started](/introduction/getting-started)
+- [Best practices](/introduction/best-practices)
+
+## User Guide
+
+- [Account](/user-guide/account)
+- [Backups](/user-guide/backups)
+- [Cron jobs](/user-guide/cron-jobs)
+- [Databases](/user-guide/databases)
+- [DNS](/user-guide/dns)
+- [File manager](/user-guide/file-manager)
+- [Mail domains](/user-guide/mail-domains)
+- [Notifications](/user-guide/notifications)
+- [Packages](/user-guide/packages)
+- [Statistics](/user-guide/statistics)
+- [Users](/user-guide/users)
+- [Web domains](/user-guide/web-domains)
+
+## Server administration
+
+- [Backup & restore](/server-administration/backup-restore)
+- [Configuration](/server-administration/configuration)
+- [Customisation](/server-administration/customisation)
+- [Databases & phpMyAdmin](/server-administration/databases)
+- [DNS clusters & DNSSEC](/server-administration/dns)
+- [Email](/server-administration/email)
+- [File manager](/server-administration/file-manager)
+- [Firewall](/server-administration/firewall)
+- [OS upgrades](/server-administration/os-upgrades)
+- [Rest API](/server-administration/rest-api)
+- [SSL certificates](/server-administration/ssl-certificates)
+- [Web templates & caching](/server-administration/web-templates)
+- [Troubleshooting](/server-administration/troubleshooting)
+
+## Contributing
+
+- [Building Packages](/contributing/building)
+- [Development](/contributing/development)
+- [Documentation](/contributing/documentation)
+- [Quick install app](/contributing/quick-install-app)
+- [Testing](/contributing/testing)
+- [Translations](/contributing/translations)
+
+## Community
+
+Third-party integrations built for the upstream project. They are not maintained
+by TulioCP.
+
+- [Nginx cache purge plugin for WordPress](/community/tulio-nginx-cache)
+- [Ioncube installer](/community/ioncube-tulio-installer)
+- [Install script generator](/community/install-script-generator)
+
+## Reference
+
+- [API](/reference/api)
+- [CLI](/reference/cli)
+
+## About
+
+- [Attribution](/attribution)
