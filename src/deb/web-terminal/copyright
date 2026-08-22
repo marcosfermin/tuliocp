@@ -1,11 +1,28 @@
-Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: tulio
-Source: https://www.tuliocp.com
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: tulio-web-terminal
+Upstream-Contact: TulioCP <hello@tuliocp.com>
+Source: https://github.com/marcosfermin/tuliocp
+Comment:
+ This package ships the web terminal service used by the TulioCP control
+ panel. It is derived from Hestia Control Panel
+ (https://github.com/hestiacp/hestiacp), itself derived from Vesta Control
+ Panel (https://vestacp.com/).
+ .
+ TulioCP is not affiliated with, nor endorsed by, the HestiaCP or VestaCP
+ projects.
 
 Files: *
-Copyright: 2018-2025, Tulio Control Panel <info@tuliocp.com>
+Copyright: 2011-2018, Serghey Rodin <serghey@vestacp.com> and the Vesta Control Panel contributors
+           2019-2025, the Hestia Control Panel contributors
+           2026, the TulioCP contributors <hello@tuliocp.com>
 License: GPL-3.0+
-Remarks: Tulio is a fork from VestaCP, special thanks to vestacp.com and Serghey Rodin
+
+Files: usr/local/tulio/web-terminal/node_modules/*
+Copyright: the respective upstream authors
+License: various
+ The bundled Node.js dependencies are third-party software, each distributed
+ under its own license. See the "license" field of the corresponding
+ package.json inside each dependency directory for the applicable terms.
 
 License: GPL-3.0+
  This program is free software: you can redistribute it and/or modify
@@ -19,12 +36,7 @@ License: GPL-3.0+
  GNU General Public License for more details.
  .
  You should have received a copy of the GNU General Public License
- along with this program. If not, see <http://www.gnu.org/licenses/>.
+ along with this program. If not, see <https://www.gnu.org/licenses/>.
  .
  On Debian systems, the complete text of the GNU General
  Public License version 3 can be found in /usr/share/common-licenses/GPL-3.
-
-# Please also look if there are files or directories which have a
-# different copyright/license attached and list them here.
-# Please avoid to pick license terms that are more restrictive than the
-# packaged work, as it may make Debian's contributions unacceptable upstream.

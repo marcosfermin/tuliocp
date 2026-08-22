@@ -85,9 +85,20 @@ get_branch_file() {
 			cp -f "$SRC_DIR/$filename" "$destination"
 		fi
 	else
-		# TODO(tulio): infrastructure not yet deployed
 		download_file "https://raw.githubusercontent.com/$REPO/$branch/$filename" "$destination" $3
 	fi
+}
+
+# Install the machine-readable copyright file where Debian policy expects it:
+# /usr/share/doc/<package>/copyright. DEBIAN/copyright is not a control file
+# recognised by dpkg, so a copy placed there never reaches the installed system.
+install_copyright() {
+	local source_file=$1
+	local package_root=$2
+	local package_name=$3
+	mkdir -p "$package_root/usr/share/doc/$package_name"
+	get_branch_file "$source_file" "$package_root/usr/share/doc/$package_name/copyright"
+	chmod 644 "$package_root/usr/share/doc/$package_name/copyright"
 }
 
 usage() {
@@ -330,13 +341,9 @@ if [ -f "$SRC_DIR/src/deb/tulio/control" ] && [ "$use_src_folder" == 'true' ]; t
 	PHP_V=$(cat $SRC_DIR/src/deb/php/control | grep "Version:" | cut -d' ' -f2)
 	WEB_TERMINAL_V=$(cat $SRC_DIR/src/deb/web-terminal/control | grep "Version:" | cut -d' ' -f2)
 else
-	# TODO(tulio): infrastructure not yet deployed
 	BUILD_VER=$(download_file https://raw.githubusercontent.com/$REPO/$branch/src/deb/tulio/control | grep "Version:" | cut -d' ' -f2)
-	# TODO(tulio): infrastructure not yet deployed
 	NGINX_V=$(download_file https://raw.githubusercontent.com/$REPO/$branch/src/deb/nginx/control | grep "Version:" | cut -d' ' -f2)
-	# TODO(tulio): infrastructure not yet deployed
 	PHP_V=$(download_file https://raw.githubusercontent.com/$REPO/$branch/src/deb/php/control | grep "Version:" | cut -d' ' -f2)
-	# TODO(tulio): infrastructure not yet deployed
 	WEB_TERMINAL_V=$(download_file https://raw.githubusercontent.com/$REPO/$branch/src/deb/web-terminal/control | grep "Version:" | cut -d' ' -f2)
 fi
 
@@ -462,7 +469,6 @@ if [ "$TULIO_DEBUG" ]; then
 fi
 
 # Generate Links for sourcecode
-# TODO(tulio): infrastructure not yet deployed
 TULIO_ARCHIVE_LINK='https://github.com/marcosfermin/tuliocp/archive/'$branch'.tar.gz'
 if [[ $NGINX_V =~ - ]]; then
 	NGINX='https://nginx.org/download/nginx-'$(echo $NGINX_V | cut -d"-" -f1)'.tar.gz'
@@ -582,7 +588,7 @@ if [ "$NGINX_B" = true ]; then
 		sed -i "s/amd64/${BUILD_ARCH}/g" "$BUILD_DIR_TULIONGINX/DEBIAN/control"
 	fi
 	apply_distro_version "$BUILD_DIR_TULIONGINX/DEBIAN/control"
-	get_branch_file 'src/deb/nginx/copyright' "$BUILD_DIR_TULIONGINX/DEBIAN/copyright"
+	install_copyright 'src/deb/nginx/copyright' "$BUILD_DIR_TULIONGINX" 'tulio-nginx'
 	get_branch_file 'src/deb/nginx/postinst' "$BUILD_DIR_TULIONGINX/DEBIAN/postinst"
 	get_branch_file 'src/deb/nginx/postrm' "$BUILD_DIR_TULIONGINX/DEBIAN/portrm"
 	chmod +x "$BUILD_DIR_TULIONGINX/DEBIAN/postinst"
@@ -710,7 +716,7 @@ if [ "$PHP_B" = true ]; then
 		-e "s/@ONIG_DEP@/${ONIG_DEP}/g" \
 		"$BUILD_DIR_TULIOPHP/DEBIAN/control"
 
-	get_branch_file 'src/deb/php/copyright' "$BUILD_DIR_TULIOPHP/DEBIAN/copyright"
+	install_copyright 'src/deb/php/copyright' "$BUILD_DIR_TULIOPHP" 'tulio-php'
 	get_branch_file 'src/deb/php/postinst' "$BUILD_DIR_TULIOPHP/DEBIAN/postinst"
 	chmod +x $BUILD_DIR_TULIOPHP/DEBIAN/postinst
 	# Get custom config
@@ -766,7 +772,7 @@ if [ "$WEB_TERMINAL_B" = true ]; then
 		sed -i "s/amd64/${BUILD_ARCH}/g" "$BUILD_DIR_TULIO_TERMINAL/DEBIAN/control"
 	fi
 	apply_distro_version "$BUILD_DIR_TULIO_TERMINAL/DEBIAN/control"
-	get_branch_file 'src/deb/web-terminal/copyright' "$BUILD_DIR_TULIO_TERMINAL/DEBIAN/copyright"
+	install_copyright 'src/deb/web-terminal/copyright' "$BUILD_DIR_TULIO_TERMINAL" 'tulio-web-terminal'
 	get_branch_file 'src/deb/web-terminal/postinst' "$BUILD_DIR_TULIO_TERMINAL/DEBIAN/postinst"
 	chmod +x $BUILD_DIR_TULIO_TERMINAL/DEBIAN/postinst
 
@@ -873,7 +879,7 @@ if [ "$TULIO_B" = true ]; then
 				sed -i "s/amd64/${BUILD_ARCH}/g" "$BUILD_DIR_TULIO/DEBIAN/control"
 			fi
 			apply_distro_version "$BUILD_DIR_TULIO/DEBIAN/control" "$os"
-			get_branch_file 'src/deb/tulio/copyright' "$BUILD_DIR_TULIO/DEBIAN/copyright"
+			install_copyright 'src/deb/tulio/copyright' "$BUILD_DIR_TULIO" 'tulio'
 			get_branch_file 'src/deb/tulio/preinst' "$BUILD_DIR_TULIO/DEBIAN/preinst"
 			get_branch_file 'src/deb/tulio/postinst' "$BUILD_DIR_TULIO/DEBIAN/postinst"
 			chmod +x $BUILD_DIR_TULIO/DEBIAN/postinst

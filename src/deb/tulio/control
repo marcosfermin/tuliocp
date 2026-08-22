@@ -7,8 +7,11 @@ Maintainer: TulioCP <info@tuliocp.com>
 Homepage: https://www.tuliocp.com
 Architecture: amd64
 Depends: bash, awk, sed, acl, sysstat, setpriv | util-linux (>= 2.33), zstd, lsb-release, idn2, jq, bubblewrap, at
-Description: tulio
- tulio is an open source hosting control panel.
- tulio has a clean and focused interface without the clutter.
- tulio has the latest of very innovative technologies.
- tulio is a fork from VestaCP, special thanks to vestacp.com and Serghey Rodin
+Description: TulioCP web hosting control panel
+ TulioCP is an open source hosting control panel with a clean, focused
+ interface for managing web domains, mail accounts, DNS zones and databases
+ from a single dashboard.
+ .
+ TulioCP is an independently maintained fork of Hestia Control Panel, which is
+ itself a fork of Vesta Control Panel. It is not affiliated with, nor endorsed
+ by, either project.

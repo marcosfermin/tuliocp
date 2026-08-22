@@ -1,11 +1,58 @@
-Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: tulio
-Source: https://www.tuliocp.com
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: tulio-nginx
+Upstream-Contact: TulioCP <hello@tuliocp.com>
+Source: https://github.com/marcosfermin/tuliocp
+Comment:
+ This package ships a private nginx build used by the TulioCP control panel.
+ The packaging is derived from Hestia Control Panel
+ (https://github.com/hestiacp/hestiacp), itself derived from Vesta Control
+ Panel (https://vestacp.com/). The nginx binary and the libraries statically
+ linked into it are third-party software distributed under their own licenses,
+ reproduced below.
+ .
+ TulioCP is not affiliated with, nor endorsed by, the HestiaCP, VestaCP or
+ nginx projects.
 
 Files: *
-Copyright: 2018-2025, Tulio Control Panel <info@tuliocp.com>
+Copyright: 2011-2018, Serghey Rodin <serghey@vestacp.com> and the Vesta Control Panel contributors
+           2019-2025, the Hestia Control Panel contributors
+           2026, the TulioCP contributors <hello@tuliocp.com>
 License: GPL-3.0+
-Remarks: Tulio is a fork from VestaCP, special thanks to vestacp.com and Serghey Rodin
+
+Files: usr/local/tulio/nginx/sbin/tulio-nginx
+Copyright: 2002-2021, Igor Sysoev
+           2011-2025, Nginx, Inc.
+License: BSD-2-clause
+Comment:
+ The shipped binary is a build of nginx (https://nginx.org/) statically linked
+ against OpenSSL (Apache-2.0), PCRE2 (BSD-3-clause with exemption) and zlib
+ (zlib license). Those components remain under the terms of their respective
+ upstream licenses; see https://www.openssl.org/source/license.html,
+ https://github.com/PCRE2Project/pcre2/blob/master/LICENCE and
+ https://zlib.net/zlib_license.html.
+
+License: BSD-2-clause
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+ .
+ 1. Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+ 2. Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the distribution.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ SUCH DAMAGE.
 
 License: GPL-3.0+
  This program is free software: you can redistribute it and/or modify
@@ -19,12 +66,7 @@ License: GPL-3.0+
  GNU General Public License for more details.
  .
  You should have received a copy of the GNU General Public License
- along with this program. If not, see <http://www.gnu.org/licenses/>.
+ along with this program. If not, see <https://www.gnu.org/licenses/>.
  .
  On Debian systems, the complete text of the GNU General
  Public License version 3 can be found in /usr/share/common-licenses/GPL-3.
-
-# Please also look if there are files or directories which have a
-# different copyright/license attached and list them here.
-# Please avoid to pick license terms that are more restrictive than the
-# packaged work, as it may make Debian's contributions unacceptable upstream.
