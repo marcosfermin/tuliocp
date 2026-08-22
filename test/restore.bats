@@ -12,6 +12,21 @@ function random() {
 head /dev/urandom | tr -dc 0-9 | head -c$1
 }
 
+# Base URL for the pre-built backup archives these tests restore from.
+# No public host serves them, so the restore tests skip unless an operator
+# points TULIO_TEST_FIXTURE_URL at a location that does.
+TULIO_TEST_FIXTURE_URL="${TULIO_TEST_FIXTURE_URL:-}"
+
+function fetch_test_archive() {
+    local archive_name=$1
+    if [ -z "$TULIO_TEST_FIXTURE_URL" ]; then
+        skip "TULIO_TEST_FIXTURE_URL is not set: no public host serves the backup archives these tests restore from"
+    fi
+    run wget --quiet --tries=3 --timeout=15 --read-timeout=15 --waitretry=3 --no-dns-cache \
+        "${TULIO_TEST_FIXTURE_URL%/}/${archive_name}.tar" -O "/backup/${archive_name}.tar"
+    assert_success
+}
+
 function setup() {
     # echo "# Setup_file" > &3
     if [ $BATS_TEST_NUMBER = 1 ]; then
@@ -154,9 +169,7 @@ function validate_web_domain() {
     mkdir -p /backup
 
     local archive_name="tulio111.2020-03-26"
-    # TODO(tulio): infrastructure not yet deployed
-    run wget --quiet --tries=3 --timeout=15 --read-timeout=15 --waitretry=3 --no-dns-cache "https://storage.tuliocp.com/testing/data/${archive_name}.tar" -O "/backup/${archive_name}.tar"
-    assert_success
+    fetch_test_archive "${archive_name}"
 
     run v-restore-user $userbk "${archive_name}.tar"
     assert_success
@@ -225,9 +238,7 @@ function validate_web_domain() {
     mkdir -p /backup
 
     local archive_name="tulio111.2020-03-26"
-    # TODO(tulio): infrastructure not yet deployed
-    run wget --quiet --tries=3 --timeout=15 --read-timeout=15 --waitretry=3 --no-dns-cache "https://storage.tuliocp.com/testing/data/${archive_name}.tar" -O "/backup/${archive_name}.tar"
-    assert_success
+    fetch_test_archive "${archive_name}"
 
     run v-restore-user $userbk "${archive_name}.tar"
     assert_success
@@ -290,9 +301,7 @@ function validate_web_domain() {
     mkdir -p /backup
 
     local archive_name="tulio170.2022-08-23"
-    # TODO(tulio): infrastructure not yet deployed
-    run wget --quiet --tries=3 --timeout=15 --read-timeout=15 --waitretry=3 --no-dns-cache "https://storage.tuliocp.com/testing/data/${archive_name}.tar" -O "/backup/${archive_name}.tar"
-    assert_success
+    fetch_test_archive "${archive_name}"
 
     run v-restore-user $userbk "${archive_name}.tar"
     assert_success
@@ -384,9 +393,7 @@ function validate_web_domain() {
     mkdir -p /backup
 
     local archive_name="tulio170.2022-08-23"
-    # TODO(tulio): infrastructure not yet deployed
-    run wget --quiet --tries=3 --timeout=15 --read-timeout=15 --waitretry=3 --no-dns-cache "https://storage.tuliocp.com/testing/data/${archive_name}.tar" -O "/backup/${archive_name}.tar"
-    assert_success
+    fetch_test_archive "${archive_name}"
 
     run v-restore-user $userbk "${archive_name}.tar"
     assert_success
@@ -474,9 +481,7 @@ function validate_web_domain() {
     mkdir -p /backup
 
     local archive_name="vesta09823.2018-10-18"
-    # TODO(tulio): infrastructure not yet deployed
-    run wget --quiet --tries=3 --timeout=15 --read-timeout=15 --waitretry=3 --no-dns-cache "https://storage.tuliocp.com/testing/data/${archive_name}.tar" -O "/backup/${archive_name}.tar"
-    assert_success
+    fetch_test_archive "${archive_name}"
 
     run v-restore-user $userbk "${archive_name}.tar"
     assert_success
@@ -545,9 +550,7 @@ function validate_web_domain() {
     mkdir -p /backup
 
     local archive_name="vesta09823.2018-10-18"
-    # TODO(tulio): infrastructure not yet deployed
-    run wget --quiet --tries=3 --timeout=15 --read-timeout=15 --waitretry=3 --no-dns-cache "https://storage.tuliocp.com/testing/data/${archive_name}.tar" -O "/backup/${archive_name}.tar"
-    assert_success
+    fetch_test_archive "${archive_name}"
 
     run v-restore-user $userbk "${archive_name}.tar"
     assert_success
