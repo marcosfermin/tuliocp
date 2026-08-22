@@ -31,8 +31,9 @@ Comment:
  these binaries and remain under their own licenses rather than the PHP
  License. They include, at minimum, PCRE2 (ext/pcre/pcre2lib, BSD-3-clause
  with exemption), timelib (ext/date/lib, MIT), libmagic (ext/fileinfo/libmagic,
- BSD-2-clause) and libmbfl (ext/mbstring/libmbfl). The authoritative license
- text for each is the LICENSE, COPYING or equivalent file shipped in the
+ BSD-2-clause), libmbfl (ext/mbstring/libmbfl), Lexbor (ext/lexbor/lexbor,
+ Apache-2.0) and uriparser (ext/uri/uriparser, BSD-3-clause). The authoritative
+ license text for each is the LICENSE, COPYING or equivalent file shipped in the
  corresponding directory of the PHP source release this package was built
  from; see https://github.com/php/php-src.
 
