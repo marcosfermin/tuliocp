@@ -568,7 +568,9 @@ if [ -d /etc/netplan ] && [ -z "$force" ]; then
 fi
 
 # Validate whether installation script matches release version before continuing with install
-if [ -z "$withdebs" ] || [ ! -d "$withdebs" ]; then
+# --force skips this check, since it requires reaching the public release branch
+# (unavailable for private/disconnected installs).
+if { [ -z "$withdebs" ] || [ ! -d "$withdebs" ]; } && [ -z "$force" ]; then
 	# TODO(tulio): infrastructure not yet deployed
 	release_branch_ver=$(curl -s https://raw.githubusercontent.com/marcosfermin/tuliocp/release/src/deb/tulio/control | grep "Version:" | awk '{print $2}')
 	if [ "$TULIO_INSTALL_VER" != "$release_branch_ver" ]; then
