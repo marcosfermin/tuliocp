@@ -604,7 +604,7 @@ if [ "$NGINX_B" = true ]; then
 
 	if [ "$KEEPBUILD" != 'true' ]; then
 		# Clean up the source folder
-		rm -r tulio- nginx_$NGINX_V
+		rm -r tulio-nginx_$NGINX_V
 		rm -rf $BUILD_DIR/rpmbuild
 		if [ "$use_src_folder" == 'true' ] && [ -d $BUILD_DIR/tuliocp-$branch_dash ]; then
 			rm -r $BUILD_DIR/tuliocp-$branch_dash
