@@ -2,7 +2,7 @@
 ;#=========================================================================#
 ;# Default Web Domain Template                                             #
 ;# DO NOT MODIFY THIS FILE! CHANGES WILL BE LOST WHEN REBUILDING DOMAINS   #
-;# https://tuliocp.com/docs/server-administration/web-templates.html      #
+;# https://tuliocp.com/docs/panel/server-administration/web-templates.html      #
 ;#=========================================================================#
 
 [%backend%]

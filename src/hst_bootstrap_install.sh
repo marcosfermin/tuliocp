@@ -10,9 +10,7 @@ branch=$2
 os=$3
 
 # Download specified installer and compiler
-# TODO(tulio): infrastructure not yet deployed
 wget https://raw.githubusercontent.com/$fork/tuliocp/$branch/install/tulio-install-$os.sh
-# TODO(tulio): infrastructure not yet deployed
 wget https://raw.githubusercontent.com/$fork/tuliocp/$branch/src/hst_autocompile.sh
 
 # Execute compiler and build tulio core package

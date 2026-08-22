@@ -6,7 +6,7 @@
 # https://www.tuliocp.com/
 #
 # Currently Supported Versions:
-# Debian 11 12 13
+# Debian 13 (trixie)
 #
 # ======================================================== #
 
@@ -15,7 +15,6 @@
 #----------------------------------------------------------#
 export PATH=$PATH:/sbin
 export DEBIAN_FRONTEND=noninteractive
-# TODO(tulio): infrastructure not yet deployed
 RHOST='apt.tuliocp.com'
 VERSION='debian'
 TULIO='/usr/local/tulio'
@@ -459,6 +458,61 @@ elif [ "$type" != "debian" ]; then
 	check_result 1 "You are running an unsupported OS."
 fi
 
+# curl is used below to reach the apt repository and the release branch. It is
+# not part of a Debian minimal install, so make sure it is present first.
+if ! command -v curl > /dev/null 2>&1; then
+	echo "[ * ] Installing curl..."
+	apt-get -qq update > /dev/null 2>&1
+	apt-get -qq install -y curl ca-certificates > /dev/null 2>&1
+	if ! command -v curl > /dev/null 2>&1; then
+		check_result 1 "curl is required but could not be installed. Install it with: apt-get install curl ca-certificates"
+	fi
+fi
+
+# TulioCP publishes packages for a single Debian release. Refuse to continue on
+# any other codename instead of failing later with confusing apt errors.
+SUPPORTED_CODENAMES="trixie"
+if ! echo " $SUPPORTED_CODENAMES " | grep -q " $codename "; then
+	echo
+	echo -e "\e[91mInstallation aborted\e[0m"
+	echo "===================================================================="
+	echo -e "\e[33mERROR: Debian '$codename' (release $release) is not supported.\e[0m"
+	echo ""
+	echo -e "\e[33mTulioCP currently publishes packages for these Debian releases only:\e[0m"
+	for supported_codename in $SUPPORTED_CODENAMES; do
+		echo -e "  \e[33m- $supported_codename\e[0m"
+	done
+	echo ""
+	echo -e "\e[33mInstall Debian 13 (trixie) and run the installer again.\e[0m"
+	echo ""
+	check_result 1 "Unsupported Debian release: $codename"
+fi
+
+# Verify that the TulioCP apt repository actually carries a suite for this
+# codename. Probing the repository root only proves that a web server answers;
+# it says nothing about whether packages exist for this release. This check is
+# skipped when installing from local .deb files, which need no remote repo.
+if [ -z "$withdebs" ] || [ ! -d "$withdebs" ]; then
+	if ! curl -fsS --proto '=https' --tlsv1.2 --connect-timeout 10 --max-time 30 \
+		--retry 2 --retry-delay 2 -o /dev/null "https://$RHOST/dists/$codename/InRelease"; then
+		echo
+		echo -e "\e[91mInstallation aborted\e[0m"
+		echo "===================================================================="
+		echo -e "\e[33mERROR: the TulioCP apt repository has no '$codename' suite,\e[0m"
+		echo -e "\e[33mor it could not be reached from this host.\e[0m"
+		echo ""
+		echo -e "\e[33mChecked: https://$RHOST/dists/$codename/InRelease\e[0m"
+		echo ""
+		echo -e "\e[33mVerify outbound HTTPS connectivity and DNS, then try again. To\e[0m"
+		echo -e "\e[33minstall without the remote repository, build the packages locally\e[0m"
+		echo -e "\e[33mand pass them to the installer:\e[0m"
+		echo -e "  \e[33m./hst_autocompile.sh \e[1m--tulio --noinstall --keepbuild '~localsrc'\e[21m\e[0m"
+		echo -e "  \e[33m./tulio-install.sh .. \e[1m--with-debs /tmp/tuliocp-src/deb\e[21m\e[0m"
+		echo ""
+		check_result 1 "TulioCP apt repository unavailable for $codename"
+	fi
+fi
+
 # Clear the screen once launch permissions have been verified
 clear
 
@@ -571,7 +625,6 @@ fi
 # --force skips this check, since it requires reaching the public release branch
 # (unavailable for private/disconnected installs).
 if { [ -z "$withdebs" ] || [ ! -d "$withdebs" ]; } && [ -z "$force" ]; then
-	# TODO(tulio): infrastructure not yet deployed
 	release_branch_ver=$(curl -s https://raw.githubusercontent.com/marcosfermin/tuliocp/release/src/deb/tulio/control | grep "Version:" | awk '{print $2}')
 	if [ "$TULIO_INSTALL_VER" != "$release_branch_ver" ]; then
 		echo
@@ -580,12 +633,11 @@ if { [ -z "$withdebs" ] || [ ! -d "$withdebs" ]; } && [ -z "$force" ]; then
 		echo -e "\e[33mERROR: Install script version does not match package version!\e[0m"
 		echo -e "\e[33mPlease download the installer from the release branch in order to continue:\e[0m"
 		echo ""
-		# TODO(tulio): infrastructure not yet deployed
 		echo -e "\e[33mhttps://raw.githubusercontent.com/marcosfermin/tuliocp/release/install/tulio-install.sh\e[0m"
 		echo ""
 		echo -e "\e[33mTo test pre-release versions, build the .deb packages and re-run the installer:\e[0m"
-		echo -e "  \e[33m./hst_autocompile.sh \e[1m--tulio branchname no\e[21m\e[0m"
-		echo -e "  \e[33m./tulio-install.sh .. \e[1m--with-debs /tmp/tuliocp-src/debs\e[21m\e[0m"
+		echo -e "  \e[33m./hst_autocompile.sh \e[1m--tulio --noinstall --keepbuild '~localsrc'\e[21m\e[0m"
+		echo -e "  \e[33m./tulio-install.sh .. \e[1m--with-debs /tmp/tuliocp-src/deb\e[21m\e[0m"
 		echo ""
 		check_result 1 "Installation aborted"
 	fi
@@ -907,9 +959,7 @@ fi
 
 # Installing TulioCP repo
 echo "[ * ] Tulio Control Panel"
-# TODO(tulio): infrastructure not yet deployed
 echo "deb [arch=$ARCH signed-by=/usr/share/keyrings/tulio-keyring.gpg] https://$RHOST/ $codename main" > $apt/tulio.list
-# TODO(tulio): infrastructure not yet deployed
 curl -s "https://$RHOST/pubkey.gpg" | gpg --dearmor | tee /usr/share/keyrings/tulio-keyring.gpg > /dev/null 2>&1
 
 # Installing Node.js repo
@@ -1946,7 +1996,6 @@ if [ "$postgresql" = 'yes' ]; then
 	mkdir -p /etc/phppgadmin/
 	mkdir -p /usr/share/phppgadmin/
 
-	# TODO(tulio): infrastructure not yet deployed
 	wget --retry-connrefused --quiet https://github.com/marcosfermin/phppgadmin/releases/download/v$pga_v/phppgadmin-v$pga_v.tar.gz
 	tar xzf phppgadmin-v$pga_v.tar.gz -C /usr/share/phppgadmin/
 
@@ -2318,7 +2367,10 @@ if [ "$api" = "yes" ]; then
 	# Keep legacy api enabled until transition is complete
 	write_config_value "API" "yes"
 	write_config_value "API_SYSTEM" "1"
-	write_config_value "API_ALLOWED_IP" ""
+	# Loopback only by default. Access from any other address must be granted
+	# deliberately with `v-add-sys-api-ip <ip>`, or from
+	# Server Settings > Security > API.
+	write_config_value "API_ALLOWED_IP" "127.0.0.1"
 else
 	write_config_value "API" "no"
 	write_config_value "API_SYSTEM" "0"
@@ -2384,8 +2436,17 @@ if [ "$iptables" = 'yes' ]; then
 fi
 
 # Get public IP
-# TODO(tulio): infrastructure not yet deployed
-pub_ipv4="$(curl -fsLm5 --retry 2 --ipv4 https://ip.tuliocp.com/)"
+# The lookup is best effort: on any failure (no network, DNS, TLS or timeout)
+# pub_ipv4 stays empty and NAT configuration is skipped. Certificate
+# validation is never disabled. Override the endpoint with
+# PUBLIC_IP_LOOKUP_URL if api.ipify.org is unreachable from this host.
+pub_ipv4="$(curl -fsS --ipv4 --proto '=https' --tlsv1.2 \
+	--connect-timeout 5 --max-time 10 \
+	--retry 2 --retry-delay 1 --retry-max-time 25 \
+	"${PUBLIC_IP_LOOKUP_URL:-https://api.ipify.org}" 2> /dev/null | head -c 64 | tr -d '[:space:]')"
+if ! [[ "$pub_ipv4" =~ ^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4}$ ]]; then
+	pub_ipv4=""
+fi
 if [ -n "$pub_ipv4" ] && [ "$pub_ipv4" != "$ip" ]; then
 	if [ -e /etc/rc.local ]; then
 		sed -i '/exit 0/d' /etc/rc.local
@@ -2453,17 +2514,17 @@ echo "10 05 * * * sudo /usr/local/tulio/bin/v-backup-users" >> /var/spool/cron/c
 echo "20 00 * * * sudo /usr/local/tulio/bin/v-update-user-stats" >> /var/spool/cron/crontabs/tulioweb
 echo "*/5 * * * * sudo /usr/local/tulio/bin/v-update-sys-rrd" >> /var/spool/cron/crontabs/tulioweb
 echo "$min $hour * * * sudo /usr/local/tulio/bin/v-update-letsencrypt-ssl" >> /var/spool/cron/crontabs/tulioweb
-# TODO(tulio): infrastructure not yet deployed
-# Automatic updates are disabled by default: there is no TulioCP apt repository
-# to update from yet. Re-enable once apt.tuliocp.com is live.
+# Automatic panel updates are opt-in. Packages are published to the TulioCP apt
+# repository, but the update cron is left out of the default install so that
+# operators decide when the panel changes. Enable it from
+# Server Settings > Updates, or with: v-add-cron-tulio-autoupdate apt
 #echo "41 4 * * * sudo /usr/local/tulio/bin/v-update-sys-tulio-all" >> /var/spool/cron/crontabs/tulioweb
 
 chmod 600 /var/spool/cron/crontabs/tulioweb
 chown tulioweb:tulioweb /var/spool/cron/crontabs/tulioweb
 
-# TODO(tulio): infrastructure not yet deployed
-# Automatic updates disabled by default until the TulioCP apt repository exists.
-# Run `v-add-cron-tulio-autoupdate apt` manually to opt in.
+# Automatic panel updates are opt-in; run `v-add-cron-tulio-autoupdate apt`
+# to enable them.
 #$TULIO/bin/v-add-cron-tulio-autoupdate apt
 
 # Building initial rrd images
@@ -2549,27 +2610,14 @@ fi
 echo -e -n " 	Username:   $username
 	Password:   $displaypass
 
-Thank you for choosing Tulio Control Panel to power your full stack web server,
-we hope that you enjoy using it as much as we do!
+Thank you for choosing Tulio Control Panel to power your full stack web server.
 
-Please feel free to contact us at any time if you have any questions,
-or if you encounter any bugs or problems:
+Documentation:  https://tuliocp.com/docs/panel/
+GitHub:         https://github.com/marcosfermin/tuliocp
+Report a bug:   https://github.com/marcosfermin/tuliocp/issues
 
-Documentation:  https://docs.tuliocp.com/
-Forum:          https://forum.tuliocp.com/
-GitHub:         https://www.github.com/marcosfermin/tuliocp
-
-Note: Automatic updates are enabled by default. If you would like to disable them,
-please log in and navigate to Server > Updates to turn them off.
-
-Help support the Tulio Control Panel project by donating via PayPal:
-https://www.tuliocp.com/donate
-
---
-Sincerely yours,
-The Tulio Control Panel development team
-
-Made with love & pride by the open-source community around the world.
+Note: Automatic panel updates are disabled by default. To enable them, log in
+and navigate to Server > Updates, or run: v-add-cron-tulio-autoupdate apt
 " >> $tmpfile
 
 send_mail="$TULIO/web/inc/mail-wrapper.php"
@@ -2581,7 +2629,7 @@ cat $tmpfile
 rm -f $tmpfile
 
 # Add welcome message to notification panel
-$TULIO/bin/v-add-user-notification "$username" 'Welcome to Tulio Control Panel!' '<p>You are now ready to begin adding <a href="/add/user/">user accounts</a> and <a href="/add/web/">domains</a>. For help and assistance, <a href="https://tuliocp.com/docs/" target="_blank">view the documentation</a> or <a href="https://forum.tuliocp.com/" target="_blank">visit our forum</a>.</p><p>Please <a href="https://github.com/marcosfermin/tuliocp/issues" target="_blank">report any issues via GitHub</a>.</p><p class="u-text-bold">Have a wonderful day!</p><p><i class="fas fa-heart icon-red"></i> The Tulio Control Panel development team</p>'
+$TULIO/bin/v-add-user-notification "$username" 'Welcome to Tulio Control Panel!' '<p>You are now ready to begin adding <a href="/add/user/">user accounts</a> and <a href="/add/web/">domains</a>. For help and assistance, <a href="https://tuliocp.com/docs/panel/" target="_blank">view the documentation</a>.</p><p>Please <a href="https://github.com/marcosfermin/tuliocp/issues" target="_blank">report any issues via GitHub</a>.</p><p class="u-text-bold">Have a wonderful day!</p>'
 
 # Clean-up
 # Sort final configuration file

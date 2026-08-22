@@ -33,35 +33,30 @@ fi
 if [ -f "$TULIO/web/images/custom/logo.svg" ]; then
 	cp -f "$TULIO/web/images/custom/logo.svg" "$TULIO/web/images/logo.svg"
 elif [ ! -f "$TULIO/web/images/custom/logo.svg" ] && [ "$download" = "yes" ]; then
-	# TODO(tulio): infrastructure not yet deployed
 	download_file "https://raw.githubusercontent.com/marcosfermin/tuliocp/release/web/images/logo.svg" "$TULIO/web/images/logo.svg"
 fi
 
 if [ -f "$TULIO/web/images/custom/logo.png" ]; then
 	cp -f "$TULIO/web/images/custom/logo.png" "$TULIO/web/images/logo.png"
 elif [ ! -f "$TULIO/web/images/custom/logo.png" ] && [ "$download" = "yes" ]; then
-	# TODO(tulio): infrastructure not yet deployed
 	download_file "https://raw.githubusercontent.com/marcosfermin/tuliocp/release/web/images/logo.png" "$TULIO/web/images/logo.png"
 fi
 
 if [ -f "$TULIO/web/images/custom/logo-header.svg" ]; then
 	cp -f "$TULIO/web/images/custom/logo-header.svg" "$TULIO/web/images/logo-header.svg"
 elif [ ! -f "$TULIO/web/images/custom/logo-header.svg" ] && [ "$download" = "yes" ]; then
-	# TODO(tulio): infrastructure not yet deployed
 	download_file "https://raw.githubusercontent.com/marcosfermin/tuliocp/release/web/images/logo-header.svg" "$TULIO/web/images/logo-header.svg"
 fi
 
 if [ -f "$TULIO/web/images/custom/favicon.png" ]; then
 	cp -f "$TULIO/web/images/custom/favicon.png" "$TULIO/web/images/favicon.png"
 elif [ ! -f "$TULIO/web/images/custom/favicon.png" ] && [ "$download" = "yes" ]; then
-	# TODO(tulio): infrastructure not yet deployed
 	download_file "https://raw.githubusercontent.com/marcosfermin/tuliocp/release/web/images/favicon.png" "$TULIO/web/images/favicon.png"
 fi
 
 if [ -f "$TULIO/web/images/custom/favicon.ico" ]; then
 	cp -f "$TULIO/web/images/custom/favicon.ico" "$TULIO/web/favicon.ico"
 elif [ ! -f "$TULIO/web/images/custom/favicon.ico" ] && [ "$download" = "yes" ]; then
-	# TODO(tulio): infrastructure not yet deployed
 	download_file "https://raw.githubusercontent.com/marcosfermin/tuliocp/release/web/favicon.ico" "$TULIO/web/favicon.ico"
 fi
 

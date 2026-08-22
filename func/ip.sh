@@ -9,6 +9,36 @@
 # Global definitions
 REGEX_IPV4="^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4}$"
 
+# Public IPv4 echo service used to detect NAT. Overridable so that operators of
+# disconnected or air-gapped installations can point it at their own endpoint.
+PUBLIC_IP_LOOKUP_URL="${PUBLIC_IP_LOOKUP_URL:-https://api.ipify.org}"
+
+# Detect the public IPv4 address of this host.
+#
+# Prints the address on stdout and returns 0 on success. On any failure
+# (no network, DNS failure, TLS failure, timeout, unexpected payload) it prints
+# nothing and returns a non-zero status, so callers must treat an empty result
+# as "unknown" rather than as an address. Certificate validation is never
+# disabled.
+get_public_ipv4() {
+	local url="${1:-$PUBLIC_IP_LOOKUP_URL}"
+	local answer
+
+	answer="$(curl -fsS --ipv4 --proto '=https' --tlsv1.2 \
+		--connect-timeout 5 --max-time 10 \
+		--retry 2 --retry-delay 1 --retry-max-time 25 \
+		"$url" 2> /dev/null | head -c 64 | tr -d '[:space:]')"
+
+	if [ -z "$answer" ]; then
+		return 1
+	fi
+	if ! [[ "$answer" =~ $REGEX_IPV4 ]]; then
+		return 1
+	fi
+
+	echo "$answer"
+}
+
 # Check ip ownership
 is_ip_owner() {
 	owner=$(grep 'OWNER=' $TULIO/data/ips/$ip | cut -f 2 -d \')

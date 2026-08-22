@@ -49,7 +49,6 @@ if [ -z "$branch" ]; then
 else
 	# Check that requested branch exists
 	echo "Checking for existence of $branch branch..."
-	# TODO(tulio): infrastructure not yet deployed
 	branch_check=$(curl -s --head -w %{http_code} "https://raw.githubusercontent.com/marcosfermin/tuliocp/$branch/src/deb/tulio/control" -o /dev/null)
 	if [ "$branch_check" -ne "200" ]; then
 		echo "Error: invalid branch name specified."

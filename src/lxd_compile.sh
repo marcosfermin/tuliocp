@@ -4,7 +4,6 @@ branch=${1-main}
 
 apt -y install curl wget
 
-# TODO(tulio): infrastructure not yet deployed
 curl https://raw.githubusercontent.com/marcosfermin/tuliocp/$branch/src/hst_autocompile.sh > /tmp/hst_autocompile.sh
 chmod +x /tmp/hst_autocompile.sh
 

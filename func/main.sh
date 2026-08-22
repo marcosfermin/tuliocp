@@ -99,7 +99,6 @@ MAILTPL=$TULIO/data/templates/mail
 DNSTPL=$TULIO/data/templates/dns
 RRD=$TULIO/web/rrd
 SENDMAIL="$TULIO/web/inc/mail-wrapper.php"
-# TODO(tulio): infrastructure not yet deployed
 TULIO_GIT_REPO="https://raw.githubusercontent.com/marcosfermin/tuliocp"
 TULIO_THEMES="$TULIO/web/css/themes"
 TULIO_THEMES_CUSTOM="$TULIO/web/css/themes/custom"

@@ -167,9 +167,10 @@ for ip in $ips; do
 done
 
 # Updating NAT
-# TODO(tulio): infrastructure not yet deployed
-pub_ipv4="$(curl -fsLm5 --retry 2 --ipv4 https://ip.tuliocp.com/)"
-if [ ! -e "$TULIO/data/ips/$pub_ipv4" ]; then
+# A failed lookup leaves pub_ipv4 empty; in that case NAT detection is skipped
+# rather than guessed at.
+pub_ipv4="$(get_public_ipv4)"
+if [ -n "$pub_ipv4" ] && [ ! -e "$TULIO/data/ips/$pub_ipv4" ]; then
 	if [ -z "$(grep -R "$pub_ipv4" $TULIO/data/ips/)" ]; then
 		ip="$(ls -t $TULIO/data/ips/ | head -n1)"
 		$BIN/v-change-sys-ip-nat "$ip" "$pub_ipv4"

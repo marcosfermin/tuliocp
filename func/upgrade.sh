@@ -127,18 +127,9 @@ upgrade_complete_message() {
 	echo "We hope that you enjoy using this version of Tulio Control Panel,           "
 	echo "have a wonderful day!                                                        "
 	echo
-	echo "Sincerely,                                                                   "
-	echo "The Tulio Control Panel development team                                    "
-	echo
-	echo "Web:      https://www.tuliocp.com/                                          "
-	echo "Docs:     https://docs.tuliocp.com/										   "
-	echo "Forum:    https://forum.tuliocp.com/                                        "
-	echo "GitHub:   https://github.com/marcosfermin/tuliocp/                              "
-	echo
-	echo "Help support the Tulio Control Panel project by donating via PayPal:        "
-	echo "https://www.tuliocp.com/donate                                              "
-	echo
-	echo "Made with love & pride by the open-source community around the world.        "
+	echo "Web:      https://tuliocp.com/                                               "
+	echo "Docs:     https://tuliocp.com/docs/panel/                                    "
+	echo "GitHub:   https://github.com/marcosfermin/tuliocp/                           "
 	echo
 	echo "============================================================================="
 	echo
@@ -187,13 +178,13 @@ upgrade_send_notification_to_panel() {
 	# Add notification to panel if variable is set to true or is not set
 	if [[ "$new_version" =~ "alpha" ]]; then
 		# Send notifications for development releases
-		$BIN/v-add-user-notification "$ROOT_USER" 'Development snapshot installed' '<p><span class="u-text-bold">Version:</span> '$new_version'<br><span class="u-text-bold">Code Branch:</span> '$RELEASE_BRANCH'</p><p>Please report any bugs by <a href="https://github.com/marcosfermin/tuliocp/issues" target="_blank">opening an issue on GitHub</a>, and feel free to share your feedback on our <a href="https://forum.tuliocp.com" target="_blank">discussion forum</a>.</p><p><i class="fas fa-heart icon-red"></i> The Tulio Control Panel development team</p>'
+		$BIN/v-add-user-notification "$ROOT_USER" 'Development snapshot installed' '<p><span class="u-text-bold">Version:</span> '$new_version'<br><span class="u-text-bold">Code Branch:</span> '$RELEASE_BRANCH'</p><p>Please report any bugs by <a href="https://github.com/marcosfermin/tuliocp/issues" target="_blank">opening an issue on GitHub</a>.</p>'
 	elif [[ "$new_version" =~ "beta" ]]; then
 		# Send feedback notification for beta releases
-		$BIN/v-add-user-notification "$ROOT_USER" 'Thank you for testing Tulio Control Panel '$new_version'.' '<p>Please share your feedback with our development team through our <a href="https://forum.tuliocp.com" target="_blank">discussion forum</a>.</p><p>Found a bug? <a href="https://github.com/marcosfermin/tuliocp/issues" target="_blank">Open an issue on GitHub</a>!</p><p><i class="fas fa-heart icon-red"></i> The Tulio Control Panel development team</p>'
+		$BIN/v-add-user-notification "$ROOT_USER" 'Thank you for testing Tulio Control Panel '$new_version'.' '<p>Found a bug? <a href="https://github.com/marcosfermin/tuliocp/issues" target="_blank">Open an issue on GitHub</a>.</p>'
 	else
 		# Send normal upgrade complete notification for stable releases
-		$BIN/v-add-user-notification "$ROOT_USER" 'Upgrade complete' '<p>Tulio Control Panel has been updated to <span class="u-text-bold">v'$new_version'</span>.</p><p><a href="https://github.com/marcosfermin/tuliocp/blob/release/CHANGELOG.md" target="_blank">View release notes</a></p><p>Please report any bugs by <a href="https://github.com/marcosfermin/tuliocp/issues" target="_blank">opening an issue on GitHub</a>.</p><p class="u-text-bold">Have a wonderful day!</p><p><i class="fas fa-heart icon-red"></i> The Tulio Control Panel development team</p>'
+		$BIN/v-add-user-notification "$ROOT_USER" 'Upgrade complete' '<p>Tulio Control Panel has been updated to <span class="u-text-bold">v'$new_version'</span>.</p><p><a href="https://github.com/marcosfermin/tuliocp/blob/release/CHANGELOG.md" target="_blank">View release notes</a></p><p>Please report any bugs by <a href="https://github.com/marcosfermin/tuliocp/issues" target="_blank">opening an issue on GitHub</a>.</p><p class="u-text-bold">Have a wonderful day!</p>'
 	fi
 }
 
@@ -230,13 +221,10 @@ upgrade_send_notification_to_email() {
 		echo "What's new: https://github.com/marcosfermin/tuliocp/blob/$RELEASE_BRANCH/CHANGELOG.md" >> $message_tmp_file
 		echo >> $message_tmp_file
 		echo "What to do if you run into issues:" >> $message_tmp_file
-		echo "- Check our forums for possible solutions: https://forum.tuliocp.com" >> $message_tmp_file
+		echo "- Consult the documentation: https://tuliocp.com/docs/panel/" >> $message_tmp_file
 		echo "- File an issue report on GitHub: https://github.com/marcosfermin/tuliocp/issues" >> $message_tmp_file
-		echo "" >> $message_tmp_file
-		echo "Help support the Tulio Control Panel project by donating via PayPal: https://www.tuliocp.com/donate" >> $message_tmp_file
 		echo "===================================================" >> $message_tmp_file
 		echo "Have a wonderful day," >> $message_tmp_file
-		echo "The Tulio Control Panel development team" >> $message_tmp_file
 
 		# Read back message from file and pass through to sendmail
 		cat $message_tmp_file | $send_mail -s "Update Installed - v${new_version}" $admin_email
@@ -598,7 +586,6 @@ upgrade_phppgadmin() {
 			echo "[ * ] Upgrading phppgadmin to version $pga_v..."
 			[ -d /usr/share/phppgadmin ] || mkdir -p /usr/share/phppgadmin
 			# Download latest phpMyAdmin release
-			# TODO(tulio): infrastructure not yet deployed
 			wget --retry-connrefused --quiet https://github.com/marcosfermin/phppgadmin/releases/download/v$pga_v/phppgadmin-v$pga_v.tar.gz
 			tar xzf phppgadmin-v$pga_v.tar.gz -C /usr/share/phppgadmin/
 

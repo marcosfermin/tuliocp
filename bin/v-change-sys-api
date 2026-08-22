@@ -38,10 +38,8 @@ check_tulio_demo_mode
 
 if [ "$status" = "enable" ]; then
 	if [ ! -f "$TULIO/web/api/index.php" ]; then
-		# TODO(tulio): infrastructure not yet deployed
 		wget -q https://raw.githubusercontent.com/marcosfermin/tuliocp/$RELEASE_BRANCH/web/api/index.php -O $TULIO/web/api/index.php
 		if [ ! -s "$TULIO/web/api/index.php" ]; then
-			# TODO(tulio): infrastructure not yet deployed
 			wget -q https://raw.githubusercontent.com/marcosfermin/tuliocp/release/web/api/index.php -O $TULIO/web/api/index.php
 			if [ ! -s "$TULIO/web/api/index.php" ]; then
 				# Throw error message to user
@@ -54,6 +52,11 @@ if [ "$status" = "enable" ]; then
 	else
 		sed -i 's|die("Error: Disabled");|//die("Error: Disabled");|g' $TULIO/web/api/index.php
 		sed -i 's|////|//|g' $TULIO/web/api/index.php
+	fi
+	# Start from a loopback-only allow list. Reaching the API from anywhere else
+	# has to be granted deliberately with v-add-sys-api-ip.
+	if [ -z "$API_ALLOWED_IP" ]; then
+		$BIN/v-change-sys-config-value "API_ALLOWED_IP" "127.0.0.1"
 	fi
 	if [ "$version" = "legacy" ] || [ "$version" = "all" ]; then $BIN/v-change-sys-config-value "API" "yes"; fi
 	if [ "$version" = "api" ] || [ "$version" = "all" ]; then $BIN/v-change-sys-config-value "API_SYSTEM" "1"; fi

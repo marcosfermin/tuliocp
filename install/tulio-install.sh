@@ -8,8 +8,10 @@
 #
 # Currently Supported Operating Systems:
 #
-# Debian 11, 12, 13
-# Ubuntu 22.04, 24.04 26.04 LTS
+# Debian 13 (trixie)
+#
+# Other releases are not supported at this time: no TulioCP packages are
+# published for them.
 #
 # ======================================================== #
 
@@ -42,17 +44,7 @@ fi
 # Detect OS
 if [ -e "/etc/os-release" ] && [ ! -e "/etc/redhat-release" ]; then
 	type=$(grep "^ID=" /etc/os-release | cut -f 2 -d '=')
-	if [ "$type" = "ubuntu" ]; then
-		# Check if lsb_release is installed
-		if [ -e '/usr/bin/lsb_release' ]; then
-			release="$(lsb_release -s -r)"
-			VERSION='ubuntu'
-		else
-			echo "lsb_release is currently not installed, please install it:"
-			echo "apt-get update && apt-get install lsb-release"
-			exit 1
-		fi
-	elif [ "$type" = "debian" ]; then
+	if [ "$type" = "debian" ]; then
 		release=$(cat /etc/debian_version | grep -o "[0-9]\{1,2\}" | head -n1)
 		VERSION='debian'
 	else
@@ -65,10 +57,13 @@ fi
 no_support_message() {
 	echo "****************************************************"
 	echo "Your operating system (OS) is not supported by"
-	echo "Tulio Control Panel. Officially supported releases:"
+	echo "Tulio Control Panel. Supported releases:"
 	echo "****************************************************"
-	echo "  Debian 11, 12, 13"
-	echo "  Ubuntu 22.04, 24.04, 26.04 LTS"
+	echo "  Debian 13 (trixie)"
+	echo ""
+	echo "TulioCP publishes packages for Debian 13 only. Support for"
+	echo "further releases will be announced at https://tuliocp.com/"
+	echo "when packages for them are published."
 	echo ""
 	exit 1
 }
@@ -103,7 +98,6 @@ ensure_utf8_locale
 check_wget_curl() {
 	# Check wget
 	if [ -e '/usr/bin/wget' ]; then
-		# TODO(tulio): infrastructure not yet deployed
 		wget -q https://raw.githubusercontent.com/marcosfermin/tuliocp/release/install/tulio-install-$type.sh -O tulio-install-$type.sh
 		if [ "$?" -eq '0' ]; then
 			bash tulio-install-$type.sh "$@"
@@ -117,7 +111,6 @@ check_wget_curl() {
 
 	# Check curl
 	if [ -e '/usr/bin/curl' ]; then
-		# TODO(tulio): infrastructure not yet deployed
 		curl -s -O https://raw.githubusercontent.com/marcosfermin/tuliocp/release/install/tulio-install-$type.sh
 		if [ "$?" -eq '0' ]; then
 			bash tulio-install-$type.sh "$@"
@@ -132,7 +125,7 @@ check_wget_curl() {
 
 # Check for supported operating system before proceeding with download
 # of OS-specific installer, and throw error message if unsupported OS detected.
-if [[ "$release" =~ ^(11|12|13|22.04|24.04|26.04)$ ]]; then
+if [ "$type" = "debian" ] && [ "$release" = "13" ]; then
 	check_wget_curl "$@"
 else
 	no_support_message

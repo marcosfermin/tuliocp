@@ -1,16 +1,26 @@
-# Tulio CP Security policy
+# TulioCP security policy
 
-Welcome and thanks for taking interest in Tulio CP!
+Thanks for taking an interest in the security of TulioCP.
 
-We are mostly interested in reports by actual Tulio CP users but all high quality contributions are welcome.
+## Reporting a vulnerability
 
-If you believe you have discovered a vulnerability in Tulio Control Panel, please notify our development team by submitting a [vulnerability disclosure via GitHub](https://github.com/marcosfermin/tuliocp/security/advisories/new).
+If you believe you have found a vulnerability in Tulio Control Panel, report it
+privately by [opening a security advisory on GitHub](https://github.com/marcosfermin/tuliocp/security/advisories/new).
+If you cannot use GitHub, email <hello@tuliocp.com> instead.
 
-We ask you to include a detailed description of the vulnerability, a list of services involved (e.g. exim, dovecot) and the versions which you've tested, full steps to reproduce the vulnerability, and include your findings and expected results.
+Please include a detailed description of the vulnerability, the services
+involved (e.g. exim, dovecot) and the versions you tested, full steps to
+reproduce, and your findings and expected results.
 
-Please do not open any public issue on Github or any other social media before the report has been published and a fix has been released.
+Do not open a public issue, or post about the report anywhere else, before a fix
+has been released.
 
-With that, good luck hacking us ;)
+TulioCP is a fork of HestiaCP. If the vulnerability is also present in upstream
+HestiaCP or VestaCP, please report it to those projects as well — TulioCP cannot
+issue fixes on their behalf, and they do not receive reports sent here.
+
+TulioCP is maintained by a single person in their own time, so expect a reply
+within a few days rather than within hours.
 
 ## Supported versions
 

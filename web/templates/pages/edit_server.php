@@ -524,7 +524,7 @@
 									<?= tohtml( _("phpMyAdmin Single Sign On")) ?>
 									<span class="hint">
 										<a
-											href="https://tuliocp.com/docs/server-administration/databases.html"
+											href="https://tuliocp.com/docs/panel/server-administration/databases.html"
 											target="_blank"
 										>
 											(<?= tohtml( _("More info")) ?>)
@@ -697,7 +697,7 @@
 						<label for="v_backup_mode" class="form-label">
 							<?= tohtml( _("Compression")) ?>
 							<a
-								href="https://tuliocp.com/docs/server-administration/backup-restore.html#what-is-the-difference-between-zstd-and-gzip"
+								href="https://tuliocp.com/docs/panel/server-administration/backup-restore.html#what-is-the-difference-between-zstd-and-gzip"
 								target="_blank"
 								class="u-ml5"
 							>
@@ -717,7 +717,7 @@
 						<label for="v_backup_gzip" class="form-label">
 							<?= tohtml( _("Compression Level")) ?>
 							<a
-								href="https://tuliocp.com/docs/server-administration/backup-restore.html#what-is-the-optimal-compression-ratio"
+								href="https://tuliocp.com/docs/panel/server-administration/backup-restore.html#what-is-the-optimal-compression-ratio"
 								target="_blank"
 								class="u-ml5"
 							>
@@ -740,7 +740,7 @@
 						<label for="v_backup_dir" class="form-label">
 							<?= tohtml( _("Directory")) ?>
 							<a
-								href="https://tuliocp.com/docs/server-administration/backup-restore.html#how-to-change-default-backup-folder"
+								href="https://tuliocp.com/docs/panel/server-administration/backup-restore.html#how-to-change-default-backup-folder"
 								target="_blank"
 								class="u-ml5"
 							>
@@ -773,7 +773,7 @@
 							<label for="backup_type" class="form-label">
 								<?= tohtml( _("Protocol")) ?>
 								<a
-									href="https://tuliocp.com/docs/server-administration/backup-restore.html#what-kind-of-protocols-are-currently-supported"
+									href="https://tuliocp.com/docs/panel/server-administration/backup-restore.html#what-kind-of-protocols-are-currently-supported"
 									target="_blank"
 									class="u-ml5"
 								>

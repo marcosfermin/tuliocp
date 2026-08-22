@@ -1,6 +1,6 @@
 [Unit]
 Description=TulioCP Web Terminal
-Documentation=https://tuliocp.com/docs/
+Documentation=https://tuliocp.com/docs/panel/
 After=network.target
 
 [Service]

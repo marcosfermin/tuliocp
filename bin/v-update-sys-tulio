@@ -38,7 +38,6 @@ check_tulio_demo_mode
 #----------------------------------------------------------#
 
 # Update repo
-# TODO(tulio): infrastructure not yet deployed
 apt-get update -o Dir::Etc::sourcelist="sources.list.d/tulio.list" \
 	-o Dir::Etc::sourceparts="-" -o APT::Get::List-Cleanup="0" -qq
 
