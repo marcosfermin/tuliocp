@@ -20,6 +20,8 @@ value=$2
 source /etc/tuliocp/tulio.conf
 # shellcheck source=/usr/local/tulio/func/main.sh
 source $TULIO/func/main.sh
+# shellcheck source=/usr/local/tulio/func/sysconfig.sh
+source $TULIO/func/sysconfig.sh
 # load config file
 source_conf "$TULIO/conf/tulio.conf"
 
@@ -37,13 +39,14 @@ format_no_quotes "$value" 'value'
 #                       Action                             #
 #----------------------------------------------------------#
 
-change_sys_value "$key" "$value"
-
-# Sort configuration file in alphabetical order on change
-sort $TULIO/conf/tulio.conf -o /tmp/updconf
-mv $TULIO/conf/tulio.conf $TULIO/conf/tulio.conf.bak
-mv /tmp/updconf $TULIO/conf/tulio.conf
-rm -f $TULIO/conf/tulio.conf.bak
+# The value is rendered into a temporary file beside the configuration, checked
+# and only then renamed over it. The previous version of this wrote the sorted
+# result to a fixed path in /tmp and moved it in, which any local user could
+# have replaced or symlinked in the window between the two, and which left the
+# panel without a configuration file at all if the move failed halfway.
+if ! sysconfig_write "$key" "$value" "$TULIO/conf/tulio.conf"; then
+	check_result "$E_UPDATE" "unable to set $key in $TULIO/conf/tulio.conf"
+fi
 
 # Check if the variable "$key" has the value "APP_NAME"
 if [ "$key" == "APP_NAME" ]; then

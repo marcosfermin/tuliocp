@@ -1777,20 +1777,28 @@ This function synchronise dns domain with the remote server.
 
 Enable / Disable API access
 
-**Options**: `STATUS`
+**Options**: `STATUS` `[VERSION]`
 
 **Examples**:
 
 ```bash
+v-change-sys-api enable all
+# Enable both APIs
+v-change-sys-api enable
+# The same thing: VERSION defaults to 'all'
 v-change-sys-api enable legacy
 # Enable legacy api currently default on most of api based systems
-example: v-change-sys-api enable api
+v-change-sys-api enable api
 # Enable api
 v-change-sys-api disable
 # Disable API
 ```
 
 Enabled / Disable API
+
+`enable` starts the allow list at `127.0.0.1` when it is empty, so the API is
+reachable from the panel host only until an address is added with
+`v-add-sys-api-ip`.
 
 ## v-change-sys-config-value
 
@@ -1836,6 +1844,20 @@ apache2 or nginx configuration.
 enable or disable demo mode
 
 **Options**: `ACTIVE`
+
+**Examples**:
+
+```bash
+v-change-sys-demo-mode yes
+# Disable the API, then put the panel into read-only demo mode
+v-change-sys-demo-mode no
+# Leave demo mode. The API is deliberately left disabled.
+```
+
+Turning demo mode off does not turn the API back on. It was disabled on the way
+in and the allow list it left behind is empty, so restoring it is a separate
+step: `v-change-sys-api enable all`, then `v-add-sys-api-ip <address>` for every
+address that has to reach it.
 
 This function will set the demo mode variable,
 which will prevent usage of certain v-scripts in the backend

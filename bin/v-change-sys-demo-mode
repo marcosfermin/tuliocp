@@ -2,6 +2,11 @@
 # info: enable or disable demo mode
 # options: ACTIVE
 #
+# example: v-change-sys-demo-mode yes
+#          # Disable the API, then put the panel into read-only demo mode
+# example: v-change-sys-demo-mode no
+#          # Leave demo mode. The API is deliberately left disabled.
+#
 # This function will set the demo mode variable,
 # which will prevent usage of certain v-scripts in the backend
 # and prevent modification of objects in the control panel.
@@ -19,6 +24,8 @@ active=$1
 source /etc/tuliocp/tulio.conf
 # shellcheck source=/usr/local/tulio/func/main.sh
 source $TULIO/func/main.sh
+# shellcheck source=/usr/local/tulio/func/sysconfig.sh
+source $TULIO/func/sysconfig.sh
 # load config file
 source_conf "$TULIO/conf/tulio.conf"
 
@@ -29,38 +36,90 @@ source_conf "$TULIO/conf/tulio.conf"
 check_args '1' "$#" 'ACTIVE'
 is_format_valid 'active'
 
+# is_format_valid skips an empty argument, and an empty ACTIVE used to fall
+# through both branches: nothing was written, the web server was restarted and
+# the action log recorded demo mode as having been turned off.
+if [ "$active" != 'yes' ] && [ "$active" != 'no' ]; then
+	check_result "$E_INVALID" "invalid active format :: $active"
+fi
+
 #----------------------------------------------------------#
 #                       Action                             #
 #----------------------------------------------------------#
 
-if [ "$active" = "yes" ]; then
-	#TO-DO: Instructions for disabling vhosts
-	# Disable API for Demo server
-	$BIN/v-change-sys-api 'disable'
-	$BIN/v-change-sys-config-value 'DEMO_MODE' 'yes'
-elif [ "$active" = "no" ]; then
-	# Note even v-change-sys-demo-mode can be called v-change-sys-config-value is protected to disable demo mode call
-	# Use sed -i "s|^DEMO_MODE=.*'|DEMO_MODE='no'|g" $TULIO/conf/tulio.conf
-	#TODO: Instructions for enabling vhosts
-	$BIN/v-change-sys-config-value 'DEMO_MODE' 'no'
+conf="$TULIO/conf/tulio.conf"
+
+current="$(sysconfig_value 'DEMO_MODE' "$conf")"
+[ -z "$current" ] && current='no'
+
+if [ "$current" = "$active" ]; then
+	echo "Demo mode is already $active, nothing to do"
+	exit
+fi
+
+#TO-DO: Instructions for disabling and re-enabling vhosts
+
+if [ "$active" = 'yes' ]; then
+	# Disable the API first, while the configuration can still be changed
+	# through the normal path: once DEMO_MODE is set, v-change-sys-api is
+	# refused by check_tulio_demo_mode like every other config-changing
+	# command. A failure here stops the whole thing, because a panel that
+	# thinks it is in demo mode with the API still answering is worse than
+	# one that never left the state it was in.
+	if ! $BIN/v-change-sys-api 'disable'; then
+		check_result "$E_UPDATE" "unable to disable the API, demo mode was not enabled"
+	fi
+fi
+
+# check_tulio_demo_mode guards v-change-sys-config-value, so that command
+# cannot be what turns demo mode off - it is refused by the very mode it would
+# be leaving. The value is written here instead, with the same atomic writer
+# that command uses: rendered beside the file, checked, renamed over it and
+# read back, with the previous contents restored if any of that does not hold.
+# This is the only place in the panel that writes DEMO_MODE without passing the
+# guard, and it writes nothing else.
+if ! sysconfig_write 'DEMO_MODE' "$active" "$conf"; then
+	check_result "$E_UPDATE" "unable to set DEMO_MODE in $conf"
 fi
 
 #----------------------------------------------------------#
 #                       Tulio                             #
 #----------------------------------------------------------#
 
-# Restarting web server
-$BIN/v-restart-web "yes"
-check_result $? "restart" > /dev/null 2>&1
+# Restarting web server. A restart that fails is reported and carried to the
+# exit code: the configuration change has already landed at this point, so
+# saying so and failing is honest where swallowing the error was not.
+restart_failed=''
 
-$BIN/v-restart-proxy "yes"
-check_result $? "restart" > /dev/null 2>&1
+if ! $BIN/v-restart-web "yes"; then
+	echo "Warning: web server restart failed"
+	restart_failed='yes'
+fi
+
+if ! $BIN/v-restart-proxy "yes"; then
+	echo "Warning: proxy restart failed"
+	restart_failed='yes'
+fi
 
 # Logging
 if [ "$active" = "yes" ]; then
 	$BIN/v-log-action "system" "Warning" "System" "Demonstration mode (restricted access) enabled."
 else
 	$BIN/v-log-action "system" "Warning" "Info" "Demonstration mode (restricted access) disabled."
+
+	# Leaving demo mode does not restore the API. It was turned off on the way
+	# in, and turning it back on is a separate, deliberate decision - the allow
+	# list it left behind is empty, so re-enabling it without saying which
+	# addresses may reach it is not something to do on somebody's behalf.
+	echo "Demo mode is off. The API was left disabled."
+	echo "Restore it deliberately, when it is wanted:"
+	echo "  v-change-sys-api enable all"
+	echo "  v-add-sys-api-ip <address>   # the allow list is seeded with 127.0.0.1 only"
+fi
+
+if [ -n "$restart_failed" ]; then
+	log_event "$E_RESTART" "$ARGUMENTS"
+	exit "$E_RESTART"
 fi
 
 log_event "$OK" "$ARGUMENTS"

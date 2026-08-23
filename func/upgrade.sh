@@ -9,6 +9,9 @@
 # Import system health check and repair library
 # shellcheck source=/usr/local/tulio/func/syshealth.sh
 source $TULIO/func/syshealth.sh
+# Import the configuration writer, used for the version bookkeeping below
+# shellcheck source=/usr/local/tulio/func/sysconfig.sh
+source $TULIO/func/sysconfig.sh
 
 #####################################################################
 #######                Functions & Initialization             #######
@@ -41,7 +44,7 @@ upgrade_health_check() {
 
 	if [ -z "$VERSION" ]; then
 		export VERSION="1.1.0"
-		$BIN/v-change-sys-config-value 'VERSION' "$VERSION"
+		upgrade_set_version "$VERSION"
 		echo
 		echo "[ ! ] Unable to detect installed version of Tulio Control Panel."
 		echo "      Setting default version to $VERSION and processing upgrade steps."
@@ -157,16 +160,29 @@ upgrade_get_version() {
 	new_version=$(dpkg -l | awk '$2=="tulio" { print $3 }')
 }
 
+# The version bookkeeping is written with sysconfig_write rather than through
+# v-change-sys-config-value, which check_tulio_demo_mode refuses while the panel
+# is in demo mode. An upgrade is dpkg running as root, not a panel user editing
+# settings, and a panel that installed a new package but kept the old version
+# number would run this release's upgrade step again on the next upgrade and
+# report the wrong version in the meantime. Nothing else about demo mode is
+# relaxed here: these two write the version and the branch and nothing else.
 upgrade_set_version() {
 	# Set new version number in tulio.conf
-	$BIN/v-change-sys-config-value "VERSION" "$@"
+	if ! sysconfig_write "VERSION" "$1" "$TULIO/conf/tulio.conf"; then
+		echo "[ ! ] Unable to record version $1 in $TULIO/conf/tulio.conf"
+		return 1
+	fi
 }
 
 upgrade_set_branch() {
 	# Set branch in tulio.conf
 	DISPLAY_VER=$(echo "$1" | sed "s|~alpha||g" | sed "s|~beta||g")
 	if [ "$DISPLAY_VER" = "$1" ]; then
-		$BIN/v-change-sys-config-value "RELEASE_BRANCH" "release"
+		if ! sysconfig_write "RELEASE_BRANCH" "release" "$TULIO/conf/tulio.conf"; then
+			echo "[ ! ] Unable to record the release branch in $TULIO/conf/tulio.conf"
+			return 1
+		fi
 	fi
 }
 

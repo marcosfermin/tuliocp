@@ -1,7 +1,11 @@
 #!/bin/bash
 # info: Enable / Disable API access
-# options: STATUS
+# options: STATUS [VERSION]
 #
+# example: v-change-sys-api enable all
+#          # Enable both APIs
+# example: v-change-sys-api enable
+#          # The same thing: VERSION defaults to 'all'
 # example: v-change-sys-api enable legacy
 #          # Enable legacy api currently default on most of api based systems
 # example: v-change-sys-api enable api
@@ -13,7 +17,13 @@
 # Enabled / Disable API
 
 status=$1
-version=$2
+# VERSION is optional. It used to fall through to setting neither API nor
+# API_SYSTEM, so "v-change-sys-api enable" installed the endpoint, uncommented
+# its die(), seeded the allow list - and left the API itself off, with nothing
+# said about it. It now means 'all', which is the only reading under which the
+# command does what its own name says. 'legacy' and 'api' are unchanged: each
+# turns on exactly the one it names and leaves the other as it found it.
+version="${2:-all}"
 
 # Includes
 # shellcheck source=/etc/tuliocp/tulio.conf
@@ -27,8 +37,11 @@ source_conf "$TULIO/conf/tulio.conf"
 #                Variables & Functions                     #
 #----------------------------------------------------------#
 
-check_args '1' "$#" "STATUS" "VERSION"
+check_args '1' "$#" 'STATUS [VERSION]'
 is_type_valid "enable,disable,remove" "$status"
+if [ "$status" = "enable" ]; then
+	is_type_valid "legacy,api,all" "$version"
+fi
 # Perform verification if read-only mode is enabled
 check_tulio_demo_mode
 
@@ -57,14 +70,24 @@ if [ "$status" = "enable" ]; then
 	# has to be granted deliberately with v-add-sys-api-ip.
 	if [ -z "$API_ALLOWED_IP" ]; then
 		$BIN/v-change-sys-config-value "API_ALLOWED_IP" "127.0.0.1"
+		check_result $? "unable to set API_ALLOWED_IP" "$E_UPDATE"
 	fi
-	if [ "$version" = "legacy" ] || [ "$version" = "all" ]; then $BIN/v-change-sys-config-value "API" "yes"; fi
-	if [ "$version" = "api" ] || [ "$version" = "all" ]; then $BIN/v-change-sys-config-value "API_SYSTEM" "1"; fi
+	if [ "$version" = "legacy" ] || [ "$version" = "all" ]; then
+		$BIN/v-change-sys-config-value "API" "yes"
+		check_result $? "unable to set API" "$E_UPDATE"
+	fi
+	if [ "$version" = "api" ] || [ "$version" = "all" ]; then
+		$BIN/v-change-sys-config-value "API_SYSTEM" "1"
+		check_result $? "unable to set API_SYSTEM" "$E_UPDATE"
+	fi
 else
 	$BIN/v-change-sys-config-value "API" "no"
+	check_result $? "unable to set API" "$E_UPDATE"
 	$BIN/v-change-sys-config-value "API_ALLOWED_IP" ""
+	check_result $? "unable to clear API_ALLOWED_IP" "$E_UPDATE"
 	$BIN/v-change-sys-config-value "API_SYSTEM" "0"
-	if [ "$status" != "remove" ]; then
+	check_result $? "unable to set API_SYSTEM" "$E_UPDATE"
+	if [ "$status" != "remove" ] && [ -f "$TULIO/web/api/index.php" ]; then
 		sed -i 's|//die("Error: Disabled");|die("Error: Disabled");|g' $TULIO/web/api/index.php
 	fi
 fi

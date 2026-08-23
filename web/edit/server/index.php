@@ -324,9 +324,7 @@ if (!empty($_POST["save"])) {
 					if (array_key_exists($php_version->tpl, $post_php)) {
 						if (!$php_version->installed) {
 							exec(
-								TULIO_CMD .
-									"v-add-web-php " .
-									quoteshellarg($php_version->version),
+								TULIO_CMD . "v-add-web-php " . quoteshellarg($php_version->version),
 								$output,
 								$return_var,
 							);
@@ -1524,60 +1522,69 @@ if (!empty($_POST["save"])) {
 		$_POST["v_api"] != $_SESSION["API"] ||
 		$_POST["v_api_allowed_ip"] != $_SESSION["API_ALLOWED_IP"]
 	) {
+		// The select posts v_api_system as a string ("0", "1" or "2"), so the
+		// strict comparison against the integer 0 that used to guard this was
+		// never true: turning both APIs off in the form went to 'enable', and
+		// the die() in web/api/index.php was never put back. Comparing the
+		// posted value as the string it is fixes that.
+		$api_legacy_on = $_POST["v_api"] == "yes";
+		$api_system_on = (string) $_POST["v_api_system"] !== "0";
 		if (empty($_SESSION["error_msg"])) {
-			if ($_POST["v_api"] == "no" && $_POST["v_api_system"] === 0) {
+			if (!$api_legacy_on && !$api_system_on) {
 				exec(TULIO_CMD . "v-change-sys-api 'disable'", $output, $return_var);
 				check_return_code($return_var, $output);
 				unset($output);
-			}
-			if (
-				$_POST["v_api"] == "yes" ||
-				($_POST["v_api_system"] !== 0 &&
-					$_POST["v_api_system"] != $_SESSION["API_SYSTEM"]) ||
-				$_POST["v_api"] != $_SESSION["API"]
-			) {
-				exec(TULIO_CMD . "v-change-sys-api 'enable'", $output, $return_var);
-				check_return_code($return_var, $output);
-				unset($output);
-			}
-		}
-		if (empty($_SESSION["error_msg"])) {
-			if ($_POST["v_api_system"] != $_SESSION["API_SYSTEM"]) {
+			} else {
+				// VERSION is no longer optional here. It now defaults to
+				// 'all', so leaving it off would switch on whichever of the
+				// two APIs the form is turning off.
+				$api_version = "all";
+				if (!$api_system_on) {
+					$api_version = "legacy";
+				} elseif (!$api_legacy_on) {
+					$api_version = "api";
+				}
 				exec(
-					TULIO_CMD .
-						"v-change-sys-config-value API_SYSTEM " .
-						quoteshellarg($_POST["v_api_system"]),
+					TULIO_CMD . "v-change-sys-api 'enable' " . quoteshellarg($api_version),
 					$output,
 					$return_var,
 				);
 				check_return_code($return_var, $output);
 				unset($output);
-				if (empty($_SESSION["error_msg"])) {
-					$v_policy_user_edit_details = $_POST["v_api_system"];
-				}
-				$v_security_adv = "yes";
 			}
+		}
+		// Both values are written out unconditionally rather than only when
+		// they differ from the session. 'enable api' sets API_SYSTEM to 1, and
+		// the form also offers 2: an operator who was already on 2 and only
+		// turned the legacy API on would otherwise have been dropped to 1 with
+		// no write to put it back.
+		if (empty($_SESSION["error_msg"])) {
+			exec(
+				TULIO_CMD .
+					"v-change-sys-config-value API_SYSTEM " .
+					quoteshellarg($_POST["v_api_system"]),
+				$output,
+				$return_var,
+			);
+			check_return_code($return_var, $output);
+			unset($output);
+			$v_security_adv = "yes";
 		}
 
 		// Change API access
 		if (empty($_SESSION["error_msg"])) {
-			if ($_POST["v_api"] != $_SESSION["API"]) {
-				$api_status = "no";
-				if ($_POST["v_api"] == "yes") {
-					$api_status = "yes";
-				}
-				exec(
-					TULIO_CMD . "v-change-sys-config-value API " . quoteshellarg($api_status),
-					$output,
-					$return_var,
-				);
-				check_return_code($return_var, $output);
-				unset($output);
-				if (empty($_SESSION["error_msg"])) {
-					$v_api = $_POST["v_api"];
-				}
-				$v_security_adv = "yes";
+			$api_status = $api_legacy_on ? "yes" : "no";
+			exec(
+				TULIO_CMD . "v-change-sys-config-value API " . quoteshellarg($api_status),
+				$output,
+				$return_var,
+			);
+			check_return_code($return_var, $output);
+			unset($output);
+			if (empty($_SESSION["error_msg"])) {
+				$v_api = $_POST["v_api"];
 			}
+			$v_security_adv = "yes";
 		}
 
 		// Change API allowed IPs

@@ -1863,9 +1863,25 @@ download_file() {
 	fi
 }
 
+# Refuse the operation while the panel is in demo mode.
+#
+# The value is read from the file rather than from the sourced configuration,
+# because a long running caller could otherwise still be holding the value from
+# before demo mode came on. The read is anchored and takes the last assignment,
+# which is the one a shell sourcing the file would see, so neither a commented
+# out line nor a superseded one can make demo mode look off.
+#
+# v-change-sys-demo-mode is the one command that has to be able to change
+# DEMO_MODE from inside demo mode. It does that by writing the value with
+# sysconfig_write instead of going through v-change-sys-config-value; this
+# guard is not relaxed for it, nor for anything else.
 check_tulio_demo_mode() {
-	demo_mode=$(grep DEMO_MODE /usr/local/tulio/conf/tulio.conf | cut -d '=' -f2 | sed "s|'||g")
-	if [ -n "$demo_mode" ] && [ "$demo_mode" = "yes" ]; then
+	local conf demo_mode
+	conf="${TULIO:-/usr/local/tulio}/conf/tulio.conf"
+	demo_mode="$(grep -E '^DEMO_MODE=' "$conf" 2> /dev/null | tail -n 1)"
+	demo_mode="${demo_mode#*=}"
+	demo_mode="${demo_mode//\'/}"
+	if [ "$demo_mode" = "yes" ]; then
 		echo "ERROR: Unable to perform operation due to security restrictions that are in place."
 		exit 1
 	fi
