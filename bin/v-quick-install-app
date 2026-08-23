@@ -116,7 +116,10 @@ $application
 		foreach ($appInstallers as $appInstaller) {
 			$app = basename(dirname($appInstaller));
 			$tulio = new \Tulio\System\TulioApp();
-			$domain = "demo.tuliocp.com";
+			// Placeholder only: this command lists app names and versions, so the
+			// installer is constructed but never run against a real domain. Keep it
+			// a reserved .test name so nothing here names a live host.
+			$domain = "example.test";
 			if (
 				!file_exists(
 					__DIR__ .

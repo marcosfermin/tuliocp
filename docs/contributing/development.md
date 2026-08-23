@@ -56,7 +56,7 @@ These instructions use [Multipass](https://multipass.run/) to create a Debian 13
 
    ```bash
    cd ../install
-   bash tulio-install-debian.sh --hostname demo.tuliocp.com --email admin@example.com --username admin --password Password123 --with-debs /tmp/tuliocp-src/deb/ --interactive no --force
+   bash tulio-install-debian.sh --hostname tulio-dev.test --email admin@example.com --username admin --password Password123 --with-debs /tmp/tuliocp-src/deb/ --interactive no --force
    ```
 
 1. Reboot the VM (and exit SSH session)
