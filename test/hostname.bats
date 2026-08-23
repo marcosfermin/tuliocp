@@ -91,6 +91,52 @@ assert_renders_to() {
     assert_renders_to comments.hosts demo.tuliocp.com panel.tuliocp.com comments.expected
 }
 
+@test "hosts: mappings that carry neither hostname come out byte for byte" {
+    # The reported overreach: unrelated entries were reformatted as a side
+    # effect of the rename. Their spacing was collapsed, a repeated alias was
+    # silently dropped and a loopback name was hoisted to the front of the
+    # list, all on lines that never mentioned either hostname.
+    assert_renders_to untouched.hosts demo.tuliocp.com panel.tuliocp.com untouched.expected
+}
+
+@test "hosts: a repeated alias on an unrelated mapping is not deduplicated" {
+    run hosts_render demo.tuliocp.com panel.tuliocp.com < "$FIXTURES/untouched.hosts"
+    assert_success
+    assert_line "10.0.0.5    build.example.org    build   build   # CI worker"
+}
+
+@test "hosts: a loopback name on an unrelated mapping keeps its position" {
+    run hosts_render demo.tuliocp.com panel.tuliocp.com < "$FIXTURES/untouched.hosts"
+    assert_success
+    assert_line "192.168.15.15   apt.internal apt localhost4 mirror"
+}
+
+@test "hosts: every unrelated line survives a rename and a rename back" {
+    hosts_render demo.tuliocp.com panel.tuliocp.com \
+        < "$FIXTURES/untouched.hosts" > "$WORKDIR/once"
+    hosts_render panel.tuliocp.com demo.tuliocp.com \
+        < "$WORKDIR/once" > "$WORKDIR/back"
+
+    # Only the panel's own mapping differs from the original, and only in the
+    # spacing the rename had to rewrite.
+    # diff exits non-zero because the files differ, which is the point: the
+    # assertion is on which lines differ.
+    run diff --unchanged-line-format='' --old-line-format='%L' --new-line-format='' \
+        "$FIXTURES/untouched.hosts" "$WORKDIR/back"
+    assert_output "   45.79.177.40   demo.tuliocp.com   demo    # panel"
+}
+
+@test "hosts: an unrelated mapping is untouched when the hostname is not in the file" {
+    # No mapping owns the hostname, so a new one is appended - and that is the
+    # only difference, the existing entries are still copied out unchanged.
+    printf '10.0.0.5    build.example.org    build   build\n' > "$WORKDIR/hosts"
+    run hosts_render demo.tuliocp.com panel.tuliocp.com < "$WORKDIR/hosts"
+    assert_success
+    assert_line --index 0 "10.0.0.5    build.example.org    build   build"
+    assert_line --index 1 "127.0.1.1 panel.tuliocp.com panel"
+    assert_equal "${#lines[@]}" 2
+}
+
 @test "hosts: duplicate mappings of the old and new hostname collapse into one" {
     run hosts_render demo.tuliocp.com panel.tuliocp.com < "$FIXTURES/duplicates.hosts"
     assert_success

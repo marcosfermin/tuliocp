@@ -1,0 +1,5 @@
+# Managed by hand
+127.0.0.1	localhost
+10.0.0.5    build.example.org    build   build   # CI worker
+192.168.15.15   apt.internal apt localhost4 mirror
+   45.79.177.40   demo.tuliocp.com   demo    # panel

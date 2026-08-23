@@ -107,8 +107,11 @@ hosts_line_owns() {
 #   - loopback boilerplate is preserved in place
 #   - when no mapping carries the hostname at all, a 127.0.1.1 entry is added,
 #     which is the Debian slot for a machine's own fully qualified name
-# Lines that come out unchanged are emitted byte for byte, so re-running this
-# against its own output is a no-op.
+# A mapping that carries neither hostname is none of this function's business
+# and is copied out byte for byte, keeping its spacing, its comment and the
+# order and duplication of its aliases. Lines that do get rewritten are only
+# rewritten when their token list actually changed, so re-running this against
+# its own output is a no-op.
 hosts_render() {
 	local old_fqdn="$1" new_fqdn="$2"
 	local old_short="${old_fqdn%%.*}" new_short="${new_fqdn%%.*}"
@@ -145,10 +148,22 @@ hosts_render() {
 		local -a names=() reserved=() canonical=() kept=() final=()
 		local owns_old='false' owns_new='false' is_primary='false'
 
-		read -r -a names <<< "$_hosts_names"
 		hosts_line_owns "$_hosts_names" "$old_fqdn" && owns_old='true'
 		hosts_line_owns "$_hosts_names" "$new_fqdn" && owns_new='true'
 		[ "$i" = "$primary" ] && is_primary='true'
+
+		# Nothing on this mapping refers to the hostname being renamed, so
+		# there is nothing to rename, drop or move. Reordering its aliases,
+		# collapsing a repeated one or normalising its spacing would all be
+		# edits to somebody else's entry, so it is copied out verbatim.
+		# The primary mapping always carries one of the two names, so it is
+		# never the line taken here.
+		if [ "$owns_old" = 'false' ] && [ "$owns_new" = 'false' ]; then
+			out+=("${lines[i]}")
+			continue
+		fi
+
+		read -r -a names <<< "$_hosts_names"
 
 		for token in "${names[@]}"; do
 			if hosts_is_reserved_name "$token"; then
