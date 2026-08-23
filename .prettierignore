@@ -33,6 +33,9 @@ web/src/
 # Patch files
 /install/upgrade/patch/*
 
+# Test fixture that deliberately does not parse
+/test/fixtures/hostname/password-config-broken.inc.php
+
 # Tulio Nginx.conf
 /src/deb/nginx/nginx.conf
 /src/rpm/nginx/nginx.conf

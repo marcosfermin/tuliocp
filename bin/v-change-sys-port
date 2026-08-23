@@ -19,6 +19,8 @@ NGINX_CONFIG="$TULIO/nginx/conf/nginx.conf"
 source /etc/tuliocp/tulio.conf
 # shellcheck source=/usr/local/tulio/func/main.sh
 source "$TULIO/func/main.sh"
+# shellcheck source=/usr/local/tulio/func/webmail.sh
+source "$TULIO/func/webmail.sh"
 # load config file
 source_conf "$TULIO/conf/tulio.conf"
 
@@ -67,8 +69,13 @@ else
 	"$BIN/v-change-sys-config-value" "BACKEND_PORT" "$PORT"
 	# Replace port in config files.
 	sed -i "s/\(listen[ \t]*.*[: \t]\)[0-9][0-9]*\([^0-9]*ssl\;$\)/\1$PORT\2/" "$NGINX_CONFIG"
-	if [ -d /etc/roundcube/ ]; then
-		sed -i "/password_tulio_port/c\$rcmail_config['password_tulio_port'] = '$PORT';" /etc/roundcube/plugins/password/config.inc.php
+	RC_PASSWORD_CONFIG='/etc/roundcube/plugins/password/config.inc.php'
+	if [ -f "$RC_PASSWORD_CONFIG" ]; then
+		if ! set_roundcube_option "$RC_PASSWORD_CONFIG" 'password_tulio_port' "$PORT"; then
+			echo "Error: unable to update $RC_PASSWORD_CONFIG"
+			log_event "$E_UPDATE" "$ARGUMENTS"
+			exit "$E_UPDATE"
+		fi
 	fi
 	if [ -d /var/lib/snappymail/ ]; then
 		sed -i "/\"tulio_port\":/c\\        \"tulio_port\": $PORT" /var/lib/snappymail/data/_data_/_default_/configs/plugin-change-password.json

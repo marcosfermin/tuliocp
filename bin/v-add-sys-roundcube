@@ -14,6 +14,8 @@ source /etc/tuliocp/tulio.conf
 # shellcheck source=/usr/local/tulio/func/main.sh
 source "$TULIO/func/main.sh"
 source "$TULIO/func/db.sh"
+# shellcheck source=/usr/local/tulio/func/webmail.sh
+source "$TULIO/func/webmail.sh"
 # load config file
 source_conf "$TULIO/conf/tulio.conf"
 # upgrade config file
@@ -247,8 +249,12 @@ if [[ "$UPDATE" == "no" ]]; then
 	rcDesKey="$(openssl rand -base64 30 | tr -d "/" | cut -c1-24)"
 	[[ -n "$rcDesKey" ]] || fail "Failed to generate des_key"
 	sed -i "s/%des_key%/$rcDesKey/g" "$RC_CONFIG_DIR/config.inc.php"
-	# Update server hostname in password change plugin
-	sed -i "s/localhost/$(hostname)/g" "$RC_CONFIG_DIR/plugins/password/config.inc.php"
+	# Update server hostname in password change plugin. Only that one setting is
+	# rewritten, so a value that happens to read "localhost" elsewhere in the
+	# file keeps it.
+	set_roundcube_option "$RC_CONFIG_DIR/plugins/password/config.inc.php" \
+		'password_tulio_host' "$(hostname)" \
+		|| fail "Failed to set the panel hostname in the password plugin configuration"
 	# Add roundcube configuration file to logrotate
 	if [[ -f "$TULIO/install/deb/logrotate/roundcube" ]]; then
 		cp -f "$TULIO/install/deb/logrotate/roundcube" /etc/logrotate.d/

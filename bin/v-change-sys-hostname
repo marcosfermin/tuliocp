@@ -18,6 +18,10 @@ domain=$1
 source /etc/tuliocp/tulio.conf
 # shellcheck source=/usr/local/tulio/func/main.sh
 source $TULIO/func/main.sh
+# shellcheck source=/usr/local/tulio/func/hosts.sh
+source $TULIO/func/hosts.sh
+# shellcheck source=/usr/local/tulio/func/webmail.sh
+source $TULIO/func/webmail.sh
 # load config file
 source_conf "$TULIO/conf/tulio.conf"
 
@@ -42,6 +46,16 @@ if [[ "$current_hostname" == "$domain" ]]; then
 	exit
 fi
 
+# Update /etc/hosts first: it is the one step that can refuse to proceed, and
+# leaving the system with a new hostname it cannot resolve is worse than not
+# changing the hostname at all.
+if ! update_etc_hosts "$current_hostname" "$domain"; then
+	echo "Error: /etc/hosts could not be updated safely, it was left unchanged"
+	echo "The hostname has not been changed"
+	log_event "$E_UPDATE" "$ARGUMENTS"
+	exit "$E_UPDATE"
+fi
+
 hostname "$domain"
 
 # Debian/Ubuntu
@@ -49,37 +63,19 @@ hostnamectl set-hostname "$domain"
 echo "$domain" > /etc/hostname
 
 # Update webmail's password plugin configuration
-if [ -d /etc/roundcube/ ]; then
-	sed -i "/password_tulio_host/c\$rcmail_config['password_tulio_host'] = '$domain';" /etc/roundcube/plugins/password/config.inc.php
+rc_password_config='/etc/roundcube/plugins/password/config.inc.php'
+if [ -f "$rc_password_config" ]; then
+	if ! set_roundcube_option "$rc_password_config" 'password_tulio_host' "$domain"; then
+		echo "Error: unable to update $rc_password_config"
+		log_event "$E_UPDATE" "$ARGUMENTS"
+		exit "$E_UPDATE"
+	fi
 fi
 if [ -d /etc/rainloop/ ]; then
 	sed -i "/tulio_host/c\tulio_host = \"$domain\"" /etc/rainloop/data/_data_/_default_/configs/plugin-tulio-change-password.ini
 fi
 if [ -d /var/lib/snappymail/ ]; then
 	sed -i "/\"tulio_host\":/c\\        \"tulio_host\": \"$domain\"," /var/lib/snappymail/data/_data_/_default_/configs/plugin-change-password.json
-fi
-
-# Update /etc/hosts
-if [ -f /etc/hosts ]; then
-	if grep -q -E "^127\.0\.0\.1\s{1,}${current_hostname}$" /etc/hosts; then
-		sed -i -E "s/127\.0\.0\.1\s{1,}${current_hostname}/127\.0\.0\.1 ${domain}/" /etc/hosts
-	else
-		echo "127.0.0.1 $domain" >> /etc/hosts
-	fi
-	# Check whether hostname entries are duplicated and remove all but the last one
-	ndup_hosts="$(grep -c -E "^127\.0\.0\.1\s{1,}${domain}$" /etc/hosts)"
-	if [[ "${ndup_hosts}" -gt "1" ]]; then
-		nlines_to_del="$((ndup_hosts - 1))"
-		lines_to_del="$(grep -n -E "^127\.0\.0\.1\s{1,}${domain}$" /etc/hosts | head -n${nlines_to_del} | awk -F ':' '{print $1}')"
-		for i in $lines_to_del; do
-			if [[ -z $list_lines ]]; then
-				list_lines="${i}d"
-			else
-				list_lines+=";${i}d"
-			fi
-		done
-		sed -i "${list_lines}" /etc/hosts
-	fi
 fi
 
 #----------------------------------------------------------#
