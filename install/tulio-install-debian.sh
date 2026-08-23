@@ -37,7 +37,7 @@ TULIO_INSTALL_VER='1.10.6'
 # package: the software list below pins the exact version, so a packaging-only
 # rebuild that bumps the revision leaves this installer asking apt for a
 # version the repository no longer carries.
-TULIO_PKG_REV='1'
+TULIO_PKG_REV='2'
 
 # Build the full Tulio version
 # Split base version (1.10.0) from channel suffix (~alpha / ~beta), if present

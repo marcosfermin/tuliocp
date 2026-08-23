@@ -9,6 +9,30 @@ All notable changes to this project will be documented in this file.
 > records it describes and rewriting them would point at commits that do not
 > exist. TulioCP releases will be recorded above this note.
 
+## [1.10.6-2] - Package Revision
+
+The upstream version is still 1.10.6. This is a rebuild of the same release, so
+apt offers it as `1.10.6-2` and the `v1.10.6` tag continues to describe
+`1.10.6-1`.
+
+### Fixes
+
+- `v-change-sys-demo-mode`, `v-change-sys-api` and `v-change-sys-config-value`
+  state their exit code instead of inheriting it. Each ended by calling
+  `log_event` and then falling off the end of the script or running a bare
+  `exit`, which hands the caller the result of appending a line to
+  `$TULIO/log/system.log`. Writing that line is not part of what any of these
+  commands promises, so a log that could not be written turned a command that
+  had done everything asked of it into a failure: `v-change-sys-demo-mode no`
+  left demo mode, printed its guidance, restarted cleanly and still exited
+  non-zero, which stopped every caller running under `set -e`. The same
+  inherited status reached `v-change-sys-demo-mode yes` through
+  `v-change-sys-api disable`, where it aborted entering demo mode after the API
+  had already been turned off, and reached `v-change-sys-api` through the four
+  `v-change-sys-config-value` calls it checks with `check_result`. A failed
+  restart, a failed configuration write, a refused argument and a failed API
+  disable all still fail, with the codes they had.
+
 ## [1.10.6] - Service Release
 
 ### Fixes
