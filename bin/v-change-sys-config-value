@@ -69,4 +69,9 @@ fi
 $BIN/v-log-action "system" "Info" "System" "System configuration value changed (Key: $key, Value: $value)."
 log_event "$OK" "$ARGUMENTS"
 
-exit
+# Stated rather than inherited from log_event, whose result is the result of
+# appending a line to the system log. Callers check this one with check_result
+# - v-change-sys-api does it four times - so a log that could not be written
+# used to be reported to them as a configuration change that had not landed,
+# when it had. Failures above exit through check_result with their own code.
+exit "$OK"

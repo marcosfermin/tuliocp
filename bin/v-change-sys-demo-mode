@@ -54,7 +54,7 @@ current="$(sysconfig_value 'DEMO_MODE' "$conf")"
 
 if [ "$current" = "$active" ]; then
 	echo "Demo mode is already $active, nothing to do"
-	exit
+	exit "$OK"
 fi
 
 #TO-DO: Instructions for disabling and re-enabling vhosts
@@ -122,6 +122,14 @@ if [ -n "$restart_failed" ]; then
 	exit "$E_RESTART"
 fi
 
+# The exit code is stated rather than inherited. A bare `exit` carries the
+# status of whatever ran last, and what runs last here is log_event, whose own
+# result is the result of appending a line to $TULIO/log/system.log. That made
+# a command which had done everything asked of it report failure whenever the
+# append did not return zero: demo mode was left, the guidance was printed, no
+# warning was shown, and the caller's `set -e` still stopped on it. Writing a
+# log entry is not part of what the command promises, so it does not decide
+# whether the command succeeded. A restart that failed still does, above.
 log_event "$OK" "$ARGUMENTS"
 
-exit
+exit "$OK"

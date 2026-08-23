@@ -112,6 +112,21 @@ sandbox_enter_demo_mode() {
     assert_conf DEMO_MODE yes
 }
 
+# Make log_event's append fail, the way a log on a full or unwritable
+# filesystem does. The command still has to report what it actually did.
+sandbox_break_system_log() {
+    rm -f "$TULIO/log/system.log"
+    ln -s /nonexistent/directory/system.log "$TULIO/log/system.log"
+}
+
+# Make the configuration write fail. Prepend $WORKDIR/shadow to PATH for the
+# one command being tested, not for bats itself.
+sandbox_break_config_write() {
+    mkdir -p "$WORKDIR/shadow"
+    printf '#!/bin/bash\nexit 1\n' > "$WORKDIR/shadow/mktemp"
+    chmod 0755 "$WORKDIR/shadow/mktemp"
+}
+
 #----------------------------------------------------------#
 #                  The configuration writer                #
 #----------------------------------------------------------#
@@ -299,8 +314,11 @@ sandbox_enter_demo_mode() {
 
     run tulio v-change-sys-demo-mode no
     assert_success
+    assert_equal "$status" 0
     refute_output --partial "security restrictions"
     assert_conf DEMO_MODE no
+    assert_conf API no
+    assert_api_endpoint off
 }
 
 @test "demo mode: turning it off leaves the API disabled and says so" {
@@ -363,6 +381,122 @@ sandbox_enter_demo_mode() {
     assert_failure
     assert_output --partial "Usage:"
     assert_conf DEMO_MODE no
+}
+
+#----------------------------------------------------------#
+#                       Exit status                        #
+#----------------------------------------------------------#
+#
+# The command used to end with a bare `exit`, which carries the status of
+# whatever ran last. What ran last was log_event, and log_event's result is the
+# result of appending a line to $TULIO/log/system.log. A panel that had just
+# been taken out of demo mode, printed its guidance and restarted cleanly still
+# exited non-zero whenever that append did not return zero, which stopped every
+# caller running under `set -e`. These tests pin the status of each path.
+
+@test "exit status: leaving demo mode reports success even if the log cannot be written" {
+    sandbox_enter_demo_mode
+    sandbox_break_system_log
+
+    run tulio v-change-sys-demo-mode no
+    assert_equal "$status" 0
+    assert_output --partial "The API was left disabled"
+    refute_output --partial "restart failed"
+    assert_conf DEMO_MODE no
+    assert_conf API no
+    assert_api_endpoint off
+}
+
+@test "exit status: entering demo mode reports success even if the log cannot be written" {
+    sandbox_break_system_log
+
+    run tulio v-change-sys-demo-mode yes
+    assert_equal "$status" 0
+    refute_output --partial "restart failed"
+    assert_conf DEMO_MODE yes
+    assert_conf API no
+    assert_api_endpoint off
+}
+
+@test "exit status: a state that is already set reports success either way" {
+    run tulio v-change-sys-demo-mode no
+    assert_equal "$status" 0
+    assert_output --partial "already no"
+    assert_conf DEMO_MODE no
+
+    sandbox_enter_demo_mode
+    run tulio v-change-sys-demo-mode yes
+    assert_equal "$status" 0
+    assert_output --partial "already yes"
+    assert_conf DEMO_MODE yes
+}
+
+@test "exit status: a state that is already set is not rescued by a broken log" {
+    sandbox_break_system_log
+
+    run tulio v-change-sys-demo-mode no
+    assert_equal "$status" 0
+    assert_output --partial "already no"
+}
+
+@test "exit status: a failed restart is still a failure when the log is broken too" {
+    # The point of stating the exit code is to stop reporting a failure that did
+    # not happen, not to stop reporting one that did.
+    sandbox_enter_demo_mode
+    sandbox_stub v-restart-web 1
+    sandbox_break_system_log
+
+    run tulio v-change-sys-demo-mode no
+    assert_equal "$status" 20
+    assert_output --partial "web server restart failed"
+    assert_conf DEMO_MODE no
+}
+
+@test "exit status: every failing path keeps its own code" {
+    # An unusable argument is refused before anything is written.
+    run tulio v-change-sys-demo-mode maybe
+    assert_equal "$status" 2
+    assert_conf DEMO_MODE no
+
+    run tulio v-change-sys-demo-mode
+    assert_equal "$status" 1
+    assert_conf DEMO_MODE no
+
+    # The API refusing to turn off stops the whole thing, and rolls nothing
+    # forward: DEMO_MODE is left as it was found.
+    sandbox_stub v-change-sys-api 1
+    run tulio v-change-sys-demo-mode yes
+    assert_equal "$status" 19
+    assert_conf DEMO_MODE no
+    assert_api_endpoint off
+}
+
+@test "exit status: a configuration that cannot be written fails and changes nothing" {
+    local before
+    sandbox_enter_demo_mode
+    before="$(cat "$CONF")"
+    # sysconfig_write renders beside the file before renaming over it, so
+    # denying it its temporary file is the one way to fail the write that a
+    # test running as root can arrange. File permissions would not stop root.
+    sandbox_break_config_write
+
+    run env PATH="$WORKDIR/shadow:$PATH" "$TULIO/bin/v-change-sys-demo-mode" no
+    assert_equal "$status" 19
+    assert_output --partial "unable to set DEMO_MODE"
+    assert_equal "$(cat "$CONF")" "$before"
+    assert_conf DEMO_MODE yes
+}
+
+@test "exit status: a failed restart on the way in is reported and carried out" {
+    sandbox_stub v-restart-proxy 1
+
+    run tulio v-change-sys-demo-mode yes
+    assert_equal "$status" 20
+    assert_output --partial "proxy restart failed"
+    # The mode did land. Failing after the change is honest; pretending the
+    # change did not happen would not be.
+    assert_conf DEMO_MODE yes
+    assert_api_endpoint off
 }
 
 #----------------------------------------------------------#

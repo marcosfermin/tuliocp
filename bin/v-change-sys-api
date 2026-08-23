@@ -112,3 +112,12 @@ else
 	$BIN/v-log-action "system" "Info" "System" "System API access disabled."
 fi
 log_event "$OK" "$ARGUMENTS"
+
+# The status is stated, not left to log_event. Falling off the end of the
+# script hands the caller the result of appending a line to the system log,
+# which is not what this command was asked to do. v-change-sys-demo-mode runs
+# this on the way into demo mode and stops if it fails, so a log that could not
+# be written was enough to refuse to enter demo mode after the API had already
+# been turned off. Every failure above exits through check_result and keeps its
+# own code.
+exit "$OK"
