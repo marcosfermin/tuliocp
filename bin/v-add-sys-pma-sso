@@ -17,6 +17,8 @@ MODE=$1
 source /etc/tuliocp/tulio.conf
 # shellcheck source=/usr/local/tulio/func/main.sh
 source $TULIO/func/main.sh
+# shellcheck source=/usr/local/tulio/func/pma.sh
+source $TULIO/func/pma.sh
 # load config file
 source_conf "$TULIO/conf/tulio.conf"
 
@@ -68,15 +70,19 @@ fi
 phpmyadminkey=$(generate_password)
 apikey=$($BIN/v-add-access-key "$ROOT_USER" 'phpmyadmin-sso' 'phpMyAdmin' 'plain')
 
-# copy config dir to /usr/share/phpmyadmin/
-cp -f $TULIO_INSTALL_DIR/phpmyadmin/tulio-sso.php $PMA_INSTALL/tulio-sso.php
-chmod 640 $PMA_INSTALL/tulio-sso.php
-chown root:tuliomail $PMA_INSTALL/tulio-sso.php
+# Render the sign-on client into /usr/share/phpmyadmin/. It verifies the panel
+# certificate, so it is told where to find a trust anchor for it when the system
+# trust store does not already have one.
+api_host="$(hostname -f)"
+ca_file="$(pma_sso_ca_file "$api_host" "$BACKEND_PORT")"
 
-sed -i "s/%PHPMYADMIN_KEY%/$phpmyadminkey/g" $PMA_INSTALL/tulio-sso.php
-sed -i "s/%API_KEY%/$apikey/g" $PMA_INSTALL/tulio-sso.php
-sed -i "s/%API_HOST_NAME%/$(hostname -f)/g" $PMA_INSTALL/tulio-sso.php
-sed -i "s/%API_TULIO_PORT%/$BACKEND_PORT/g" $PMA_INSTALL/tulio-sso.php
+if ! pma_sso_render "$TULIO_INSTALL_DIR/phpmyadmin/tulio-sso.php" \
+	"$PMA_INSTALL/tulio-sso.php" \
+	"$phpmyadminkey" "$api_host" "$BACKEND_PORT" "$apikey" "$ca_file"; then
+	echo "Error: unable to install $PMA_INSTALL/tulio-sso.php"
+	log_event "$E_UPDATE" "$ARGUMENTS"
+	exit "$E_UPDATE"
+fi
 
 # Check if config already contains the keys
 touch $PMA_CONFIG/tulio-sso.inc.php

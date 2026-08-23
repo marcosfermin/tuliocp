@@ -17,6 +17,8 @@ MODE=$1
 source /etc/tuliocp/tulio.conf
 # shellcheck source=/usr/local/tulio/func/main.sh
 source $TULIO/func/main.sh
+# shellcheck source=/usr/local/tulio/func/pma.sh
+source $TULIO/func/pma.sh
 # load config file
 source_conf "$TULIO/conf/tulio.conf"
 
@@ -44,13 +46,18 @@ fi
 #                       Action                             #
 #----------------------------------------------------------#
 
-apikey=$(grep -Po "'API_KEY', '(.*)'" /usr/share/phpmyadmin/tulio-sso.php | cut "-d'" -f4)
+# NOTE(tulio): this used to look for the key between single quotes, which the
+# client has never used, so the key it revoked was always the empty string and
+# the real one stayed valid after the sign-on was disabled.
+apikey="$(pma_sso_read_define "$PMA_INSTALL/tulio-sso.php" 'API_KEY')"
 
-if [ -z $(echo $apikey | grep ":") ]; then
-	$BIN/v-revoke-api-key "$apikey"
+if [ -z "$apikey" ]; then
+	echo "Warning: no API key found in $PMA_INSTALL/tulio-sso.php"
+	echo "         Check v-list-access-keys for a leftover phpmyadmin-sso key"
+elif [[ "$apikey" == *:* ]]; then
+	$BIN/v-delete-access-key "${apikey%%:*}"
 else
-	apikey=$(grep -Po "'API_KEY', '(.*)'" /usr/share/phpmyadmin/tulio-sso.php | cut "-d'" -f4 | cut -d ":" -f1)
-	$BIN/v-delete-access-key "$apikey"
+	$BIN/v-revoke-api-key "$apikey"
 fi
 
 #remove new files
