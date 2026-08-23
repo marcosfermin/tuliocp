@@ -2,7 +2,7 @@
 
 <h2 align="center">Lightweight and powerful control panel for the modern web</h2>
 
-<p align="center"><strong>Version:</strong> 1.10.5 | <a href="https://github.com/marcosfermin/tuliocp/blob/release/CHANGELOG.md">View Changelog</a></p>
+<p align="center"><strong>Version:</strong> 1.10.6 | <a href="https://github.com/marcosfermin/tuliocp/blob/release/CHANGELOG.md">View Changelog</a></p>
 
 <p align="center">
 	<a href="https://tuliocp.com/">Website</a> |

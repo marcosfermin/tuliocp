@@ -9,6 +9,57 @@ All notable changes to this project will be documented in this file.
 > records it describes and rewriting them would point at commits that do not
 > exist. TulioCP releases will be recorded above this note.
 
+## [1.10.6] - Service Release
+
+### Fixes
+
+- `v-change-sys-demo-mode no` now works while demo mode is on. It used to set
+  `DEMO_MODE` through `v-change-sys-config-value`, which `check_tulio_demo_mode`
+  refuses in demo mode, so the command was blocked by the very mode it was
+  trying to leave and there was no supported way out short of editing
+  `tulio.conf` by hand. It now writes that one value directly. The guard is
+  unchanged for everything else, `v-change-sys-config-value DEMO_MODE no`
+  included: this command is the only way out, not a hole in the guard.
+- Leaving demo mode does not turn the API back on. It is disabled on the way in
+  and the allow list it leaves behind is empty, so the command now says what to
+  run to restore it rather than restoring it on the operator's behalf.
+- `v-change-sys-demo-mode` refuses an argument that is neither `yes` nor `no`.
+  An empty one used to fall through both branches: nothing was written, the web
+  server was restarted anyway and the action log recorded demo mode as having
+  been turned off. A failed API disable, a failed write and a failed restart are
+  now all reported and reach the exit code.
+- `v-change-sys-api enable` with no version argument means `enable all`. It used
+  to install the API endpoint, uncomment its `die()` and seed the allow list
+  while setting neither `API` nor `API_SYSTEM`, so an operator who ran it got a
+  half-enabled API and nothing said so. `enable legacy` and `enable api` are
+  unchanged and still turn on exactly the one they name. A configuration write
+  that fails inside `v-change-sys-api` now fails the command instead of being
+  ignored.
+- Turning both APIs off in Server Settings reaches `v-change-sys-api disable`.
+  The form posts its API selector as a string and the check compared it with
+  the integer `0`, which never matched, so switching the API off went down the
+  enable path and left the `die()` in `web/api/index.php` commented out.
+- An upgrade records the new version number even when the panel is in demo
+  mode. `upgrade_set_version` and `upgrade_set_branch` went through the guarded
+  command, so a demo-mode panel installed the new package and kept the old
+  version in `tulio.conf` - and would have run the same upgrade step again next
+  time.
+
+### Security
+
+- `v-change-sys-config-value` no longer stages the new configuration at a fixed
+  path in `/tmp`. It sorted the file to `/tmp/updconf` and moved that over
+  `tulio.conf`, which any local user could replace or point elsewhere in the
+  window between the two steps, and which left the panel with no configuration
+  file at all if the move failed halfway. The new content is now rendered
+  beside the configuration, checked, renamed over it and read back, with the
+  previous contents restored if any of that does not hold. Values containing a
+  quote or a line break are refused rather than written.
+- `check_tulio_demo_mode` anchors its read to the last `DEMO_MODE=` assignment,
+  which is the one a shell sourcing the file would see. It matched the string
+  anywhere on any line, so a commented out or superseded line could make demo
+  mode look like it was off.
+
 ## [1.10.5] - Security Release
 
 ### Security

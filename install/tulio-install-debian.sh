@@ -31,7 +31,7 @@ TULIO_COMMON_DIR="$TULIO/install/common"
 VERBOSE='no'
 
 # Define software versions
-TULIO_INSTALL_VER='1.10.5'
+TULIO_INSTALL_VER='1.10.6'
 # Debian package revision of the tulio package to install. It must match
 # src/deb/tulio/pkgrev, which is what hst_autocompile.sh stamps into the built
 # package: the software list below pins the exact version, so a packaging-only
