@@ -30,3 +30,10 @@ $config["password_idn_ascii"] = false;
 // Control Panel host
 $config["password_tulio_host"] = "localhost";
 $config["password_tulio_port"] = "8083";
+
+// CA bundle used to verify the panel certificate. The driver always verifies
+// it; this only selects the trust store. Leave it unset to use the system one,
+// which is what a panel with a Let's Encrypt certificate needs. Set it to a
+// bundle containing the panel certificate when the panel serves a self-signed
+// or private CA certificate, for example:
+// $config["password_tulio_ca_file"] = "/usr/local/tulio/ssl/certificate.crt";
