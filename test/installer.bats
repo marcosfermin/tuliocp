@@ -254,6 +254,28 @@ setup_keyring_fixtures() {
 
 # --- Package revisions --------------------------------------------------- #
 
+@test "the upstream version is the same everywhere it is stated" {
+    # The installer aborts when its own version does not match the Version: in
+    # the release branch's control file, so these have to move together. The
+    # docs nav and the README state the same number to users.
+    version=$(grep '^Version: ' "$REPO_ROOT/src/deb/tulio/control" | awk '{print $2}')
+    [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+
+    grep -q "^TULIO_INSTALL_VER='${version}'\$" "$DEBIAN"
+    grep -q "^TULIO_INSTALL_VER='${version}'\$" "$UBUNTU"
+    grep -q "^	\"version\": \"${version}\",\$" "$REPO_ROOT/package.json"
+    grep -q "^	\"version\": \"${version}\",\$" "$REPO_ROOT/package-lock.json"
+    grep -q "<strong>Version:</strong> ${version} " "$REPO_ROOT/README.md"
+}
+
+@test "the release has an upgrade step and a changelog entry" {
+    # A panel on the previous version finds the step by its file name, so a
+    # release without one silently skips its own migration.
+    version=$(grep '^Version: ' "$REPO_ROOT/src/deb/tulio/control" | awk '{print $2}')
+    [ -f "$REPO_ROOT/install/upgrade/versions/${version}.sh" ]
+    grep -q "^## \[${version}\]" "$REPO_ROOT/CHANGELOG.md"
+}
+
 @test "every packaged component records a numeric package revision" {
     for pkg in tulio nginx php web-terminal; do
         [ -f "$REPO_ROOT/src/deb/$pkg/pkgrev" ]

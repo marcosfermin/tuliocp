@@ -9,6 +9,36 @@ All notable changes to this project will be documented in this file.
 > records it describes and rewriting them would point at commits that do not
 > exist. TulioCP releases will be recorded above this note.
 
+## [1.10.5] - Security Release
+
+### Security
+
+- phpMyAdmin single sign-on now verifies the panel certificate. The sign-on
+  client posts the panel API key over HTTPS and gets database credentials back,
+  and it did that with `CURLOPT_SSL_VERIFYPEER` and `CURLOPT_SSL_VERIFYHOST`
+  switched off, so anything that could answer on the panel address collected the
+  key. It now verifies against the system trust store, refuses redirects, has
+  connect and transfer timeouts, and fails the sign-on rather than sending
+  anything over a connection it could not verify. Set `API_CA_FILE` in the
+  installed client to add a trust anchor for a panel certificate the system
+  store does not know; there is no setting that turns verification off.
+- The upgrade re-renders an already installed
+  `/usr/share/phpmyadmin/tulio-sso.php` from the fixed template, keeping the
+  keys it holds, so the fix does not wait for phpMyAdmin to be reinstalled.
+
+- `v-delete-sys-pma-sso` now revokes the access key the sign-on client held. It
+  looked for that key between single quotes, which the client has never used, so
+  it always revoked the empty string and left the real key valid after the
+  sign-on had been disabled.
+
+### Fixes
+
+- `v-change-sys-hostname` no longer reformats `/etc/hosts` entries that have
+  nothing to do with the hostname being changed. Renaming the hostname used to
+  collapse the spacing of unrelated mappings, drop a repeated alias and move
+  loopback names to the front of their line. Those lines are now copied out byte
+  for byte.
+
 ## [1.10.3] - Service Release
 
 ### Changes
